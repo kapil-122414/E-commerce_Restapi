@@ -33,9 +33,9 @@ router.get("/category", async (req, res) => {
   try {
     const data = await modelschema.find();
 
-    res.status(200).json({ message: "successfully", data: data });
+    res.status(200).json({ data });
   } catch (error) {
-    res.status(500).json({ message: "server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 //delete api
@@ -90,9 +90,8 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
           if (err) console.log("Old image delete error:", err);
         });
       }
-      
-        updateddata.Img = req.file.path;
-   
+
+      updateddata.Img = req.file.path;
     }
     const newdata = await modelschema.findByIdAndUpdate(id, updateddata, {
       new: true,
@@ -103,5 +102,18 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
     res.status.json({ message: "server error" });
   }
 });
+// get api
+router.get("/category/:_id", async (req, res) => {
+  try {
+    const data = await modelschema.findById(req.params._id);
 
+    if (!data) {
+      return res.status(404).json({ message: "Data not found" });
+    }
+
+    res.status(200).json({ data });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;
