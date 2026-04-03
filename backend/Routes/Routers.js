@@ -4,6 +4,7 @@ const router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const uploads = require("../multer/imgmulter");
+const cloudinary = require("../config/cloudinary");
 const { resolve } = require("dns");
 
 //post api
@@ -12,9 +13,7 @@ router.post("/category", uploads.single("Img"), async (req, res) => {
     const data = req.body;
 
     const newcategory = await modelschema.create({
-      Img: req.file
-        ? req.file.path.replace(/\\/g, "/").replace(/\s/g, "")
-        : null,
+      Img: req.file ? req.file.path : null,
       ...data,
 
       //    Img: req.file ? req.file.path.replace(/\\/g, "/") : null,
@@ -41,29 +40,19 @@ router.get("/category", async (req, res) => {
 //delete api
 router.delete("/category/:_id", async (req, res) => {
   try {
-    const data = req.params._id;
+    const data = await modelschema.findById(req.params._id);
 
-    const finddata = await modelschema.findByIdAndDelete(data);
-
-    if (!finddata) {
+    if (!data) {
       return res.status(404).json({ message: "not find data" });
     }
 
-    if (finddata.Img) {
-      const filepath = path.resolve(finddata.Img); // 🔥 best
-
-      if (fs.existsSync(filepath)) {
-        fs.unlink(filepath, (err) => {
-          if (err) {
-            console.log("File delete error:", err);
-          } else {
-            console.log("File deleted successfully");
-          }
-        });
-      } else {
-        console.log("File not found:", filepath);
-      }
+    // 🔥 Cloudinary delete
+    if (data.Img) {
+      const publicId = data.Img.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`categories/${publicId}`);
     }
+
+    await modelschema.findByIdAndDelete(req.params._id);
 
     res.status(200).json({ message: "delete successfully" });
   } catch (error) {
@@ -77,7 +66,7 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
     const id = req.params._id;
 
     const olddata = await modelschema.findById(id);
-    console.log(olddata);
+
     if (!olddata) {
       return res.status(404).json({ meaage: "data not found" });
     }
@@ -85,13 +74,13 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
     const updateddata = { ...req.body };
 
     if (req.file) {
+      // old image delete from cloudinary
       if (olddata.Img) {
-        fs.unlink(olddata.Img, (err) => {
-          if (err) console.log("Old image delete error:", err);
-        });
+        const publicId = olddata.Img.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`categories/${publicId}`);
       }
 
-      updateddata.Img = req.file.path;
+      updateddata.Img = req.file.path; // new URL
     }
     const newdata = await modelschema.findByIdAndUpdate(id, updateddata, {
       new: true,
@@ -115,5 +104,5 @@ router.get("/category/:_id", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});                
+});
 module.exports = router;
