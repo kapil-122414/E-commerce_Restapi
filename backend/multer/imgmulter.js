@@ -1,18 +1,15 @@
 const multer = require("multer");
+const {CloudinaryStorage}=require('multer-storage-cloudinary');
+const cloudinary=require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const cleanName = file.originalname
-      .replace(/\s/g, "") // space remove
-      .replace(/\//g, "") // forward slash remove
-      .replace(/\\/g, ""); // backslash remove
-
-    cb(null, Date.now() + "-" + cleanName);
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "categories",
+    allowed_formats: ["jpg", "png", "jpeg"],
   },
 });
-const uploads = multer({ storage: storage });
+
+const uploads = multer({ storage });
 
 module.exports = uploads;
