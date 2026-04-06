@@ -205,7 +205,7 @@
       const modal = document.getElementById("modal");
       const input = document.getElementById("imageInput");
       const preview = document.getElementById("preview");
-
+      let liveapi = "https://categoryapi-oluc.onrender.com/api/category";
       let editId = null;
 
       function openModal() {
@@ -221,8 +221,6 @@
       }
 
       async function closeModal() {
-        modal.style.display = "none";
-
         const input = document.getElementById("imageInput");
         const Categoryname = document.getElementById("Categoryname").value;
         const slug = document.getElementById("slug").value;
@@ -239,12 +237,12 @@
 
         console.log("hyy");
         try {
-          let url = "http://localhost:5000/api/category/";
+          let url = `${liveapi}`;
           let method = "POST";
 
           // 🔥 EDIT MODE
           if (editId) {
-            url += editId;
+            url += "/" + editId;
             method = "PATCH";
           }
 
@@ -256,6 +254,7 @@
           console.log(data);
           if (res.ok) {
             dbdata();
+            modal.style.display = "none";
             resetfrom();
           }
         } catch (error) {
@@ -264,9 +263,10 @@
       }
       window.onload = dbdata;
       //get data
+
       async function dbdata() {
         const showdata = document.getElementById("showdata");
-        const res = await fetch("http://localhost:5000/api/category");
+        const res = await fetch(`${liveapi}`);
         const data = await res.json();
         showdata.innerHTML = " ";
         console.log(data);
@@ -275,7 +275,7 @@
           console.log(item);
           showdata.innerHTML += `
             <tr>
-    <td><img src="http://localhost:5000/${item.Img}"  width="50px" height="50px" alt="img"/></td>
+    <td><img src="${item.Img}"  width="50px" height="50px" alt="img"/></td>
     <td>${item.Categoryname}</td>
     <td>${item.Slug}</td>
     <td>${item.Description}</td>
@@ -292,7 +292,7 @@
       async function deleteCategory(_id) {
         try {
           console.log(_id);
-          const res = await fetch(`http://localhost:5000/api/category/${_id}`, {
+          const res = await fetch(`${liveapi}/${_id}`, {
             method: "delete",
           });
 
@@ -308,43 +308,36 @@
         }
       }
       //update
-
-      async function updateCategory(id) {
+      async function updateCategory(_id) {
         try {
-          editId = id;
+          // 🔥 button change
 
-          console.log("hyy");
-          const res = await fetch(`http://localhost:5000/api/category/${id}`);
+          editId = _id;
+
+          const res = await fetch(`${liveapi}/${_id}`);
           const data = await res.json();
 
-          console.log("API DATA 👉", data);
+          const item = data.data; // backend se ek hi object aana chahiye
 
-          // 🔥 FIX (IMPORTANT)
-          const item = data.data || data;
+          // 🔥 form fill
+          document.getElementById("Categoryname").value = item.Categoryname;
+          document.getElementById("slug").value = item.Slug;
+          document.getElementById("Description").value = item.Description;
 
-          // form fill
-          document.getElementById("Categoryname").value =
-            item.Categoryname || "";
-          document.getElementById("slug").value = item.Slug || "";
-          document.getElementById("Description").value = item.Description || "";
-
-          // image preview
+          // 🔥 image preview
           if (item.Img) {
-            preview.src = `http://localhost:5000/${item.Img}`;
+            preview.src = item.Img;
             preview.style.display = "block";
           }
 
-          document.getElementById("imageInput").value = "";
-
+          // 🔥 button change
           document.getElementById("saveBtn").innerText = "Update";
 
-          // 🔥 modal open LAST
-          modal.style.display = "flex";
+          openModal();
         } catch (error) {
-          console.log(error);
+          console.log("Edit error:", error);
         }
       }
-
       // Image preview
       input.addEventListener("change", () => {
         const file = input.files[0];
