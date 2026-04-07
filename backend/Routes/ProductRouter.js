@@ -94,7 +94,7 @@ router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
 // get api
 router.get("/product/:_id", async (req, res) => {
   try {
-    const data = await modelschema.findById(req.params._id);
+    const data = await productschema.findById(req.params._id);
 
     if (!data) {
       return res.status(404).json({ message: "Data not found" });
