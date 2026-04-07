@@ -24,7 +24,7 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+//get api
 router.get("/product", async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
@@ -43,7 +43,7 @@ router.get("/product", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+//delete
 router.delete("/product/:_id", async (req, res) => {
   try {
     const data = await productschema.findById(req.params._id);
@@ -62,7 +62,7 @@ router.delete("/product/:_id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+//patch
 router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
   try {
     const id = req.params._id;
@@ -86,6 +86,21 @@ router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
     });
     console.log(newdata);
     res.status(200).json({ message: "successfully", newdata });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+//get api
+// get api
+router.get("/product/:_id", async (req, res) => {
+  try {
+    const data = await modelschema.findById(req.params._id);
+
+    if (!data) {
+      return res.status(404).json({ message: "Data not found" });
+    }
+
+    res.status(200).json({ data });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
