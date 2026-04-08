@@ -28,10 +28,25 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
 router.get("/product", async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 12;
+    let limit = parseInt(req.query.limit) || 4;
     let skip = (page - 1) * limit;
-    const data = await productschema.find().skip(skip).limit(limit);
-    const total = await productschema.countDocuments();
+
+    const { Productname, categoryId } = req.query;
+    let filter = {};
+    if (categoryId) {
+      filter.categoryId = categoryId;
+    }
+    if (Productname) {
+      filter.Productname = { $regex: Productname, $options: "i" };
+    }
+    if (req.query.minPrice && req.query.maxPrice) {
+      filter.price = {
+        $gte: req.query.minPrice,
+        $lte: req.query.maxPrice,
+      };
+    }
+    const data = await productschema.find(filter).skip(skip).limit(limit);
+    const total = await productschema.countDocuments(filter);
     res.status(200).json({
       message: "successfully",
       page,
