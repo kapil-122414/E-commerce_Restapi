@@ -35,11 +35,11 @@ router.post("/login", async (req, res) => {
     const { Email, Password } = req.body;
     const Emailfind = await registerschma.findOne({ Email: Email });
     if (!Emailfind) {
-      res.status(400).json({ message: "Email not register" });
+      return res.status(400).json({ message: "Email not register" });
     }
     const passwordcheck = await bcrypt.compare(Password, Emailfind.Password);
     if (!passwordcheck) {
-      res.status(400).json({ message: "enter correct passwor" });
+      return res.status(400).json({ message: "enter correct passwor" });
     }
     const Role = Emailfind.Role;
 
@@ -74,8 +74,31 @@ router.post("/login", async (req, res) => {
   }
 });
 //token verify
-router.get("/profile", async(req,res)=>{
-    const token=req.cookies.token;
-})
+router.get("/profile", async (req, res) => {
+  
+  const tokens = req.cookies?.token;
+
+  try {
+    if (!tokens) {
+      return res.status(404).json({ message: "token not valid" });
+    }
+
+    const decode = jwt.verify(tokens, "secretkey");
+    res.json({
+      message: "Profile fetched successfully",
+      user: {
+        Email: decode.Email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/user", (req, res) => {
+  const token = req.cookies.token;
+
+  const findrole = registerschma.find();
+  console.log(findrole);
+});
 
 module.exports = router;
