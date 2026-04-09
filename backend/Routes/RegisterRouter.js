@@ -4,6 +4,7 @@ const registerschma = require("../models/Registermodels");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authmiddleware = require("../Middlerware/authmiddleware");
 
 router.post("/register", async (req, res) => {
   try {
@@ -45,10 +46,11 @@ router.post("/login", async (req, res) => {
 
     const Token = jwt.sign(
       {
+        id: Emailfind._id,
         Email: Email,
       },
       "secretkey",
-      { expiresIn: "1m" },
+      { expiresIn: "1h" },
     );
     res.cookie("token", Token, {
       httpOnly: true,
@@ -63,9 +65,12 @@ router.post("/login", async (req, res) => {
         .json({ message: "login successfly", token: Token, Role: Role });
     }
     if (Role === "admin") {
-      return res
-        .status(200)
-        .json({ message: "login successfly", token: Token, Role: Role });
+      return res.status(200).json({
+        message: "login successfly",
+        token: Token,
+        Role: Role,
+        id: id,
+      });
     }
 
     res.status(200).json({ message: "successfully" });
@@ -74,25 +79,13 @@ router.post("/login", async (req, res) => {
   }
 });
 //token verify
-router.get("/profile", async (req, res) => {
-  
-  const tokens = req.cookies?.token;
-
-  try {
-    if (!tokens) {
-      return res.status(404).json({ message: "token not valid" });
-    }
-
-    const decode = jwt.verify(tokens, "secretkey");
-    res.json({
-      message: "Profile fetched successfully",
-      user: {
-        Email: decode.Email,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+router.get("/profile", authmiddleware, async (req, res) => {
+  res.json({
+    message: "Profile fetched successfully",
+    user: {
+      Email: req.user.Email,
+    },
+  });
 });
 router.get("/user", (req, res) => {
   const token = req.cookies.token;
