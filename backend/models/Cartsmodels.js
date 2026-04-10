@@ -13,9 +13,14 @@ const carts = new Schema(
       {
         Size: String,
         Color: String,
-        Quantity: Number,
       },
     ],
+    Quantity: {
+      type: Number,
+    },
+    totalprice: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
