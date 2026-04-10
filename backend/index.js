@@ -9,6 +9,7 @@ const routes = require("./Routes/Routers");
 const productrouter = require("./Routes/ProductRouter");
 const registerrouter = require("./Routes/RegisterRouter");
 const cartsrouter = require("./Routes/CartsRouter");
+const orderd=require("./Routes/orderdRouter");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 connectdb();
@@ -19,6 +20,7 @@ app.use("/api", routes);
 app.use("/api", productrouter);
 app.use("/api", registerrouter);
 app.use("/api", cartsrouter);
+app.use("/api",orderd)
 app.use("/uploads", express.static("uploads"));
 
 app.get("/api", (req, res) => {
