@@ -33,12 +33,19 @@ router.post("/carts", authmiddleware, async (req, res) => {
 router.get("/carts", authmiddleware, async (req, res) => {
   try {
     const Userid = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     if (!Userid) {
       return res.json({ message: "data not valid" });
     }
     const cartsitems = await carts
       .find({ UserId: Userid })
-      .populate("ProductId", "Productname Img price");
+      .populate("ProductId", "Productname Img price")
+      .skip(skip)
+      .limit(limit);
 
     let grandTotal = 0;
     const updatedCart = cartsitems.map((item) => {
@@ -62,9 +69,17 @@ router.get("/carts", authmiddleware, async (req, res) => {
       };
     });
 
-    res.json({ message: "success", items: updatedCart, grandTotal });
+    const total = await carts.countDocuments(Userid);
+    res.json({
+      message: "success",
+      items: updatedCart,
+      grandTotal,
+      page,
+      totalpage: Math.ceil(total / limit),
+      totaldata: total,
+    });
   } catch (error) {
-    res.status(500).json({ meaage: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 //one cart delete

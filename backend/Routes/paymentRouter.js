@@ -38,9 +38,9 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
       }
     }
     const existingPayment = await PAYMENTS.findOne({
-      paymentId: razorpay_payment_id,
+      paymentid: razorpay_payment_id,
     });
-
+    
     if (existingPayment) {
       return res.status(400).json({
         success: false,
