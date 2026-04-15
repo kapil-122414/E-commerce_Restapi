@@ -17,7 +17,12 @@ app.use(express.urlencoded({ extended: true }));
 connectdb();
 
 const cors = require("cors");
-app.use(cors({ origin: "*" }));
+app.use(
+  cors({
+    origin: "http://localhost:5500", // ya frontend URL
+    credentials: true,
+  }),
+);
 const port = process.env.PORT || 5000;
 app.use("/api", routes);
 app.use("/api", productrouter);
