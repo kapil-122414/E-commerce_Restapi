@@ -54,10 +54,10 @@ router.post("/login", async (req, res) => {
     );
     res.cookie("token", Token, {
       httpOnly: true,
-      secure: true,
+      secure: false,
 
       maxAge: 60 * 60 * 1000,
-      sameSite: "none",
+      sameSite: "lax",
       path: "/",
     });
     if (Role === "user") {
