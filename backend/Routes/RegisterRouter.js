@@ -54,10 +54,10 @@ router.post("/login", async (req, res) => {
     );
     res.cookie("token", Token, {
       httpOnly: true,
-      secure: flase,
-      sameSite: "None",
+      secure: true,
+
       maxAge: 60 * 60 * 1000,
-      sameSite: "lax",
+      sameSite: "none",
       path: "/",
     });
     if (Role === "user") {
