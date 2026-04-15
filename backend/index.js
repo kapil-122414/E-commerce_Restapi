@@ -19,7 +19,7 @@ connectdb();
 const cors = require("cors");
 app.use(
   cors({
-    origin: true, // ya frontend URL
+    origin: "http://127.0.0.1:5500", // ya frontend URL
     credentials: true,
   }),
 );
