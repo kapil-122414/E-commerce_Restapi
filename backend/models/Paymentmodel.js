@@ -27,10 +27,22 @@ const payments = new Schema(
     signature: {
       type: String,
     },
+    paymentmethod: {
+      type: String,
+      default: "COD",
+    },
+    paymentstatus: {
+      type: String,
+      default: "panding",
+    },
     status: {
       type: String,
       default: "panding",
       enum: ["panding", "completed", "failed"],
+    },
+    shippingAdress: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "order",
     },
   },
   {

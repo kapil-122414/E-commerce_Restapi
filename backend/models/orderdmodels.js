@@ -32,6 +32,33 @@ const orderd = new Schema(
       type: String,
       default: "panding",
     },
+    shippingAddress: {
+      name: {
+        type: String,
+        required: true,
+      },
+      Phoneno: {
+        type: Number,
+
+        required: true,
+      },
+      address: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      state: {
+        type: String,
+        required: true,
+      },
+      pinecode: {
+        type: Number,
+        required: true,
+      },
+    },
   },
 
   {

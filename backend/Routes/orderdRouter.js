@@ -7,6 +7,8 @@ const authmiddleware = require("../Middlerware/authmiddleware");
 router.post("/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
+    const id =req.body;
+
     const cartitems = await carts
       .find({ UserId: userid })
       .populate("ProductId");
@@ -25,12 +27,14 @@ router.post("/order", authmiddleware, async (req, res) => {
         price: item.ProductId.price,
         Quantity: item.Quantity,
         totalprice,
+        
       };
     });
     const newOrder = await orders.create({
       userid,
       items: orderditem,
       totalamount,
+      shippingAddress:id.shippingaddress,
     });
     const deletdata = await carts.deleteMany({ UserId: userid });
 
@@ -63,9 +67,10 @@ router.get("/order", authmiddleware, async (req, res) => {
       .skip(skip)
       .limit(limit);
     const total = await orders.countDocuments(filter);
+
     res.status(200).json({
       message: "success",
-      data,
+      data: data,
       page,
       totalPages: Math.ceil(total / limit),
       totalData: total,

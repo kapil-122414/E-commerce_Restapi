@@ -13,11 +13,14 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       orderId,
+      paymentmethod,
+      paymentstatus,
     } = req.body;
 
     const userId = req.user.id;
-    const orderData = await order.findOne({ _id: orderId, userid: userId });
-
+    const orderData = await order
+      .findOne({ _id: orderId, userid: userId })
+      .populate("shippingAddress");
     if (!orderData) {
       return res.status(404).json({ message: "orderd not found" });
     }
@@ -39,36 +42,64 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
     }
     const existingPayment = await PAYMENTS.findOne({
       paymentid: razorpay_payment_id,
+    }).populate({
+      path: "orderId",
+      populate: {
+        path: "shippingAddress",
+      },
     });
-    
+
     if (existingPayment) {
       return res.status(400).json({
         success: false,
         message: "Payment already recorded",
       });
     }
-
-    const Payments = await PAYMENTS.create({
-      userId,
-      amount: orderData.totalamount,
-      orderId,
-      paymentid: razorpay_payment_id || "testing Payment",
-      orderdpaymentid: razorpay_order_id || "testing order",
-      signature: razorpay_signature || "testing signature",
-
-      status: "completed",
-    });
-
-    await order.findByIdAndUpdate(orderId, {
-      paymentStatus: "completed",
-      status: "confirmed",
-    });
-
-    res.status(200).json({
+    if (paymentmethod === "COD") {
+      const Payments = await PAYMENTS.create({
+        userId,
+        amount: orderData.totalamount,
+        orderId,
+        paymentmethod: paymentmethod,
+        shippingAdress: orderData.shippingAddress._id,
+        orderdpaymentid: razorpay_order_id || "testing order",
+        paymentstatus: paymentstatus || "panding",
+      });
+        res.status(200).json({
       success: true,
       message: "Payment verified successfully",
       Payments,
     });
+    } 
+    else if (paymentmethod === "upi" || paymentmethod === "card") {
+      const Payments = await PAYMENTS.create({
+        userId,
+        amount: orderData.totalamount,
+        orderId,
+        paymentid: razorpay_payment_id || "testing Payment",
+        orderdpaymentid: razorpay_order_id || "testing order",
+        signature: razorpay_signature || "testing signature",
+        shippingAdress: orderData.shippingAddress._id,
+        paymentmethod: paymentmethod,
+        paymentstatus: paymentstatus || "complete",
+        status: "completed",
+      });
+        res.status(200).json({
+      success: true,
+      message: "Payment verified successfully",
+      Payments,
+    });
+    }
+    else{
+      res.status(404).json({message:"payment option not found!"});
+    }
+
+    await order.findByIdAndUpdate(orderId, {
+      paymentstatus: "complete",
+      status: "confirmed",
+    });
+
+  
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -104,6 +135,17 @@ router.post("/payment/:orderid", authmiddleware, async (req, res) => {
   } catch (error) {
     res.status(500).json(error);
   }
+});
+
+router.get("/payments", async (req, res) => {
+  const data = await PAYMENTS.find().populate({
+    path: "orderId",
+    populate: {
+      path: "shippingAddress",
+    },
+  });
+
+  res.json(data);
 });
 
 module.exports = router;
