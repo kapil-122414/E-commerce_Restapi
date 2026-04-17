@@ -6,6 +6,7 @@ const path = require("path");
 const uploads = require("../multer/imgmulter");
 const cloudinary = require("../config/cloudinary");
 const { resolve } = require("dns");
+const { stat } = require("fs/promises");
 
 //post api
 router.post("/category", uploads.single("Img"), async (req, res) => {
@@ -30,13 +31,30 @@ router.post("/category", uploads.single("Img"), async (req, res) => {
 //get api
 router.get("/category", async (req, res) => {
   try {
-    let  page=parseInt(req.query.page) || 1;
-    let limit=parseInt(req.query.limit)||4;
-    let skip=(page-1)*limit;
-    const data = await modelschema.find().skip(skip).limit(limit);
+    let filter = {};
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 4;
+    let skip = (page - 1) * limit;
+    let search = req.query.search || "";
+    const status = req.query.status || "";
+
+    if (status) {
+      filter.status = status;
+    }
+    if (search) {
+      filter.Categoryname = { $regex: search, $options: "i" };
+    }
+
+    const data = await modelschema
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     const total = await modelschema.countDocuments();
 
-    res.status(200).json({ page,total, totalPages: Math.ceil(total / limit),data });
+    res
+      .status(200)
+      .json({ page, total, totalPages: Math.ceil(total / limit), data });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
