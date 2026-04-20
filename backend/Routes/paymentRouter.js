@@ -65,13 +65,12 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
         orderdpaymentid: razorpay_order_id || "testing order",
         paymentstatus: paymentstatus || "panding",
       });
-        res.status(200).json({
-      success: true,
-      message: "Payment verified successfully",
-      Payments,
-    });
-    } 
-    else if (paymentmethod === "upi" || paymentmethod === "card") {
+      res.status(200).json({
+        success: true,
+        message: "Payment verified successfully",
+        Payments,
+      });
+    } else if (paymentmethod === "upi" || paymentmethod === "card") {
       const Payments = await PAYMENTS.create({
         userId,
         amount: orderData.totalamount,
@@ -84,22 +83,19 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
         paymentstatus: paymentstatus || "complete",
         status: "completed",
       });
-        res.status(200).json({
-      success: true,
-      message: "Payment verified successfully",
-      Payments,
-    });
-    }
-    else{
-      res.status(404).json({message:"payment option not found!"});
+      res.status(200).json({
+        success: true,
+        message: "Payment verified successfully",
+        Payments,
+      });
+    } else {
+      res.status(404).json({ message: "payment option not found!" });
     }
 
     await order.findByIdAndUpdate(orderId, {
       paymentstatus: "complete",
       status: "confirmed",
     });
-
-  
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -138,14 +134,54 @@ router.post("/payment/:orderid", authmiddleware, async (req, res) => {
 });
 
 router.get("/payments", async (req, res) => {
-  const data = await PAYMENTS.find().populate({
-    path: "orderId",
-    populate: {
-      path: "shippingAddress",
-    },
-  });
+  try {
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    let skip = (page - 1) * limit;
+    let search = req.query.search || "";
+    let status = req.query.status || "";
 
-  res.json(data);
+    const matchStage = {};
+
+    if (status) {
+      matchStage.status = status;
+    }
+
+    const data = await PAYMENTS.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "orderId",
+        },
+      },
+      { $unwind: "$orderId" },
+
+      {
+        $match: {
+          ...(status && { status }),
+          ...(search && {
+            "orderId.shippingAddress.name": {
+              $regex: search,
+              $options: "i",
+            },
+          }),
+        },
+      },
+
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    res.json({
+      data,
+      page,
+      limit,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
-
 module.exports = router;

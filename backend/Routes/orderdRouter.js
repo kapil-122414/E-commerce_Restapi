@@ -7,7 +7,7 @@ const authmiddleware = require("../Middlerware/authmiddleware");
 router.post("/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
-    const id =req.body;
+    const id = req.body;
 
     const cartitems = await carts
       .find({ UserId: userid })
@@ -27,14 +27,13 @@ router.post("/order", authmiddleware, async (req, res) => {
         price: item.ProductId.price,
         Quantity: item.Quantity,
         totalprice,
-        
       };
     });
     const newOrder = await orders.create({
       userid,
       items: orderditem,
       totalamount,
-      shippingAddress:id.shippingaddress,
+      shippingAddress: id.shippingaddress,
     });
     const deletdata = await carts.deleteMany({ UserId: userid });
 
@@ -58,11 +57,12 @@ router.get("/order", authmiddleware, async (req, res) => {
       filter.status = status;
     }
     if (search) {
-      filter["items.name"] = { $regex: search, $options: "i" };
+      filter["shippingAddress.name"] = { $regex: search, $options: "i" };
     }
 
     const data = await orders
       .find(filter)
+      .populate("shippingAddress")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

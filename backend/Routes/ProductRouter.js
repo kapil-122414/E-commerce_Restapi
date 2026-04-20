@@ -30,11 +30,19 @@ router.get("/product", async (req, res) => {
     let page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 4;
     let skip = (page - 1) * limit;
+    let status = req.query.status || "";
+    let search = req.query.search || "";
 
     const { Productname, categoryId } = req.query;
     let filter = {};
     if (categoryId) {
       filter.categoryId = categoryId;
+    }
+    if (status) {
+      filter.status = status;
+    }
+    if (search) {
+      filter.Productname = { $regex: search, $options: "i" };
     }
     if (Productname) {
       filter.Productname = { $regex: Productname, $options: "i" };
@@ -45,7 +53,11 @@ router.get("/product", async (req, res) => {
         $lte: req.query.maxPrice,
       };
     }
-    const data = await productschema.find(filter).skip(skip).limit(limit);
+    const data = await productschema
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     const total = await productschema.countDocuments(filter);
     res.status(200).json({
       message: "successfully",
