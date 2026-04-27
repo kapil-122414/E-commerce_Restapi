@@ -15,6 +15,7 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
 
     const newproduct = await productschema.create({
       Img: req.file ? req.file.path : null,
+      imges: req.file ? req.file.path : null,
       ...data,
     });
     console.log(newproduct);

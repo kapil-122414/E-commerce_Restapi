@@ -39,7 +39,7 @@ router.get("/category", async (req, res) => {
     const status = req.query.status || "";
 
     if (status) {
-      filter.status = status;
+      filter.Status = status;
     }
     if (search) {
       filter.Categoryname = { $regex: search, $options: "i" };

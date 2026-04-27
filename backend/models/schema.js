@@ -1,23 +1,41 @@
-const { Schema, model } = require("mongoose");
+const { Schema, model, default: mongoose } = require("mongoose");
 
-const categoryschema = new Schema({
-  Img: {
-    type: String,
-    require: true,
-  },
-  Categoryname: {
-    type: String,
-    required: true,
-  },
+const categoryschema = new Schema(
+  {
+    Img: {
+      type: String,
+      require: true,
+    },
+    Categoryname: {
+      type: String,
+      required: true,
+    },
 
-  Slug: {
-    type: String,
-    required: true,
+    Slug: {
+      type: String,
+      required: true,
+    },
+    Description: {
+      type: String,
+      required: true,
+    },
+
+    Order: {
+      type: Number,
+      required: true,
+    },
+    Status: {
+      type: String,
+      required: true,
+    },
+    Featured: {
+      type: Boolean,
+      default: false,
+    },
   },
-  Description: {
-    type: String,
-    required: true,
+  {
+    timestamps: true,
   },
-});
+);
 
 module.exports = model("category", categoryschema);
