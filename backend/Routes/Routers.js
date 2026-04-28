@@ -114,6 +114,11 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
   }
 });
 // get api
+router.get("/category/all", async (req, res) => {
+  const data = await modelschema.find().select("_id Categoryname");
+  res.json(data);
+});
+
 router.get("/category/:_id", async (req, res) => {
   try {
     const data = await modelschema.findById(req.params._id);
@@ -127,4 +132,5 @@ router.get("/category/:_id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 module.exports = router;

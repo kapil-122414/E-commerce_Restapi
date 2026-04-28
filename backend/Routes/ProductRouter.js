@@ -9,22 +9,69 @@ const { resolve } = require("dns");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 //post api
-router.post("/product", uploads.single("Img"), async (req, res) => {
-  try {
-    const data = req.body;
+router.post(
+  "/product",
+  uploads.fields([
+    { name: "Img", maxCount: 1 },
+    { name: "variantImages", maxCount: 20 },
+  ]),
+  async (req, res) => {
+    try {
+      const {
+        Productname,
+        description,
+        shortDescription,
+        slug,
+        categoryId,
+        brand,
+        status,
+        price,
+        mrp,
+        discount,
+      } = req.body;
+      let variants = JSON.parse(req.body.variant || "[]");
 
-    const newproduct = await productschema.create({
-      Img: req.file ? req.file.path : null,
-      imges: req.file ? req.file.path : null,
-      ...data,
-    });
-    console.log(newproduct);
+      const productImage = req.files["Img"] ? req.files["Img"][0].path : null;
+      const variantImg = req.files["variantImages"] || [];
+      variants = variants.map((v, i) => ({
+        imges: {
+          url: variantImg[i] ? variantImg[i].path : "",
+        },
+        size: v.size,
+        colour: v.color,
+        price1: Number(v.price),
+        stock: Number(v.stock),
+        sku: v.sku,
+        mrp1: Number(v.mrp),
+        discount1: Number(v.discount),
+      }));
 
-    res.status(200).json({ message: "successfully", newproduct });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+      const newproduct = await productschema.create({
+        Productname,
+        Description: description, 
+        slug,
+        shortdiscription: shortDescription, 
+        brand,
+        categoryId: categoryId,
+        status,
+        price: Number(price),
+        mrp: Number(mrp),
+        discount: Number(discount),
+
+        Img: {
+          url: productImage,
+        },
+
+        variant: variants,
+      });
+      console.log(newproduct);
+
+      res.status(200).json({ message: "successfully", newproduct });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  },
+);
 //get api
 router.get("/product", async (req, res) => {
   try {

@@ -8,7 +8,7 @@ const productschema = new Schema(
     },
     price: {
       type: Number,
-      max: 100,
+
       min: 0,
       required: true,
     },
@@ -27,10 +27,10 @@ const productschema = new Schema(
     },
     discount: {
       type: Number,
+      max: 100,
+      min: 0,
     },
-    price: {
-      type: Number,
-    },
+
     brand: {
       type: String,
     },
@@ -47,28 +47,23 @@ const productschema = new Schema(
     },
     variant: [
       {
-        imges: {
+        image: {
           url: String,
-          public_id: String,
         },
         size: String,
         colour: String,
-        price1: {
-          type: Number,
-          min: 0,
-          max: 100,
-        },
-        stock: {
-          type: Number,
-          min: 0,
-        },
+        price1: Number,
+        stock: Number,
         sku: {
           type: String,
           unique: true,
         },
         mrp1: Number,
-
-        discount1: Number,
+        discount1: {
+          type: Number,
+          max: 100,
+          min: 0,
+        },
       },
     ],
     reviws: [
