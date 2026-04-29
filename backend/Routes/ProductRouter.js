@@ -13,7 +13,10 @@ router.post(
   "/product",
   uploads.fields([
     { name: "Img", maxCount: 1 },
-    { name: "variantImages", maxCount: 20 },
+    ...Array.from({ length: 20 }, (_, i) => ({
+      name: `variantImages_${i}`,
+      maxCount: 1,
+    })),
   ]),
   async (req, res) => {
     try {
@@ -32,11 +35,13 @@ router.post(
       let variants = JSON.parse(req.body.variant || "[]");
 
       const productImage = req.files["Img"] ? req.files["Img"][0].path : null;
-      const variantImg = req.files["variantImages"] || [];
       variants = variants.map((v, i) => ({
-        imges: {
-          url: variantImg[i] ? variantImg[i].path : "",
-        },
+        image: req.files[`variantImages_${i}`]
+          ? {
+              url: req.files[`variantImages_${i}`][0].path,
+              public_id: req.files[`variantImages_${i}`][0].filename,
+            }
+          : null,
         size: v.size,
         colour: v.color,
         price1: Number(v.price),
@@ -48,9 +53,9 @@ router.post(
 
       const newproduct = await productschema.create({
         Productname,
-        Description: description, 
+        Description: description,
         slug,
-        shortdiscription: shortDescription, 
+        shortdiscription: shortDescription,
         brand,
         categoryId: categoryId,
         status,
@@ -105,7 +110,8 @@ router.get("/product", async (req, res) => {
       .find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .populate("categoryId");
     const total = await productschema.countDocuments(filter);
     res.status(200).json({
       message: "successfully",

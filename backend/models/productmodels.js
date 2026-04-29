@@ -49,6 +49,7 @@ const productschema = new Schema(
       {
         image: {
           url: String,
+          public_id: String,
         },
         size: String,
         colour: String,
@@ -56,7 +57,6 @@ const productschema = new Schema(
         stock: Number,
         sku: {
           type: String,
-          unique: true,
         },
         mrp1: Number,
         discount1: {
