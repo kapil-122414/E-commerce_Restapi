@@ -110,12 +110,12 @@ router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
 
     res.status(200).json({ message: "successfully", newdata });
   } catch (err) {
-    res.status.json({ message: "server error" });
+    res.status(500).json({ message: "server error" });
   }
 });
 // get api
 router.get("/category/all", async (req, res) => {
-  const data = await modelschema.find().select("_id Categoryname");
+  const data = await modelschema.find().select("_id Categoryname brands");
   res.json(data);
 });
 
@@ -128,6 +128,28 @@ router.get("/category/:_id", async (req, res) => {
     }
 
     res.status(200).json({ data });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+//desciption api
+router.post("/ai-description", async (req, res) => {
+  try {
+    const { Categoryname, productname } = req.body;
+    const Response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama3",
+        prompt: `Write a short ecommerce category description for "${Categoryname}" in 2 lines.`,
+        stream: false,
+      }),
+    });
+    const data = await Response.json();
+    res.json({ description: data.response });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

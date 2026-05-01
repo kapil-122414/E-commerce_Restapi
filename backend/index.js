@@ -12,6 +12,7 @@ const registerrouter = require("./Routes/RegisterRouter");
 const cartsrouter = require("./Routes/CartsRouter");
 const orderd = require("./Routes/orderdRouter");
 const payment = require("./Routes/paymentRouter");
+const brands = require("./Routes/BrandRouter");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 connectdb();
@@ -31,6 +32,7 @@ app.use("/api", cartsrouter);
 app.use("/api", orderd);
 app.use("/api", payment);
 app.use("/uploads", express.static("uploads"));
+app.use("/api", brands);
 
 app.get("/api", (req, res) => {
   console.log("hyy");
