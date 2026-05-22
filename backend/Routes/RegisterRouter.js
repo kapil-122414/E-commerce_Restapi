@@ -10,9 +10,12 @@ router.post("/register", async (req, res) => {
   try {
     const { Email, Password } = req.body;
 
+    console.log(Email);
+    console.log(Password);
     if (!Email || !Password) {
       return res.json({ message: "Email or password required" });
     }
+
     const Emailfind = await registerschma.findOne({ Email: Email });
     if (Emailfind) {
       return res.json({ message: "User already exists" });
@@ -35,9 +38,11 @@ router.post("/login", async (req, res) => {
   try {
     const { Email, Password } = req.body;
     const Emailfind = await registerschma.findOne({ Email: Email });
+
     if (!Emailfind) {
       return res.status(400).json({ message: "Email not register" });
     }
+
     const passwordcheck = await bcrypt.compare(Password, Emailfind.Password);
     if (!passwordcheck) {
       return res.status(400).json({ message: "enter correct passwor" });
