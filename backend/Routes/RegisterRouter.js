@@ -41,11 +41,12 @@ router.post("/login", async (req, res) => {
 
     if (!Emailfind) {
       return res.status(400).json({ message: "Email not register" });
+      
     }
 
     const passwordcheck = await bcrypt.compare(Password, Emailfind.Password);
     if (!passwordcheck) {
-      return res.status(400).json({ message: "enter correct passwor" });
+      return res.status(400).json({ message: "enter correct password" });
     }
     const Role = Emailfind.Role;
 
