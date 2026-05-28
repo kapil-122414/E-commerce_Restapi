@@ -9,25 +9,49 @@ const { resolve } = require("dns");
 const { stat } = require("fs/promises");
 
 //post api
-router.post("/category", uploads.single("Img"), async (req, res) => {
-  try {
-    const data = req.body;
-
-    const newcategory = await modelschema.create({
-      Img: req.file ? req.file.path : null,
-      ...data,
-
-      //    Img: req.file ? req.file.path.replace(/\\/g, "/") : null,
-      //   Categoryname: data.Categoryname,
-      //   Slug: data.Slug,
-      //   Description: data.Description,
+router.post(
+  "/category",
+  (req, res, next) => {
+    uploads.single("Img")(req, res, (err) => {
+      if (err) {
+        console.error("❌ Multer/Cloudinary Error:", err.message);
+        return res.status(500).json({
+          success: false,
+          message: "Image upload failed: " + err.message,
+        });
+      }
+      next();
     });
+  },
+  async (req, res) => {
+    try {
+      console.log("=========== CATEGORY API ==========");
+      console.log("BODY :", req.body);
+      console.log("FILE :", req.file);
+      console.log("===================================");
 
-    res.status(200).json({ Message: "successfully", data: newcategory });
-  } catch (error) {
-    res.status(500).json({ message: "server error" });
-  }
-});
+      // ✅ Validate karo
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Image required",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        body: req.body,
+        file: req.file,
+      });
+    } catch (error) {
+      console.error("CATEGORY ERROR:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+);
 //get api
 router.get("/category", async (req, res) => {
   try {
