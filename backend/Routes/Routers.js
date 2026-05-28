@@ -25,12 +25,6 @@ router.post(
   },
   async (req, res) => {
     try {
-      console.log("=========== CATEGORY API ==========");
-      console.log("BODY :", req.body);
-      console.log("FILE :", req.file);
-      console.log("===================================");
-
-      // ✅ Validate karo
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -38,10 +32,20 @@ router.post(
         });
       }
 
-      res.status(200).json({
+      // ✅ Create and save to MongoDB
+      const category = new modelschema({
+        Categoryname: req.body.Categoryname,
+        Slug: req.body.Slug,
+        Status: req.body.Status,
+        Img: req.file.path, // Cloudinary URL
+      });
+
+      await category.save(); // ✅ This was missing!
+
+      res.status(201).json({
         success: true,
-        body: req.body,
-        file: req.file,
+        message: "Category saved successfully",
+        data: category,
       });
     } catch (error) {
       console.error("CATEGORY ERROR:", error);
@@ -50,7 +54,7 @@ router.post(
         message: error.message,
       });
     }
-  },
+  }
 );
 //get api
 router.get("/category", async (req, res) => {
