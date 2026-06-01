@@ -54,23 +54,29 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 //get api
 router.get("/category", async (req, res) => {
   try {
     let filter = {};
+
     let page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 4;
     let skip = (page - 1) * limit;
+
     let search = req.query.search || "";
-    const status = req.query.status || "";
+    let status = req.query.status || "";
 
     if (status) {
       filter.Status = status;
     }
+
     if (search) {
-      filter.Categoryname = { $regex: search, $options: "i" };
+      filter.Categoryname = {
+        $regex: search,
+        $options: "i",
+      };
     }
 
     const data = await modelschema
@@ -78,11 +84,15 @@ router.get("/category", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-    const total = await modelschema.countDocuments();
 
-    res
-      .status(200)
-      .json({ page, total, totalPages: Math.ceil(total / limit), data });
+    const total = await modelschema.countDocuments(filter);
+
+    res.status(200).json({
+      page,
+      total,
+      totalPages: Math.ceil(total / limit),
+      data,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
