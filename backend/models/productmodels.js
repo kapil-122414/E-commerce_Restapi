@@ -32,7 +32,8 @@ const productschema = new Schema(
     },
 
     brand: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "brand",
     },
     status: {
       type: String,
@@ -45,25 +46,15 @@ const productschema = new Schema(
       url: String,
       public_id: String,
     },
+    stock: {
+      type: Number,
+    },
     variant: [
       {
-        image: {
-          url: String,
-          public_id: String,
-        },
         size: String,
         colour: String,
         price1: Number,
         stock: Number,
-        sku: {
-          type: String,
-        },
-        mrp1: Number,
-        discount1: {
-          type: Number,
-          max: 100,
-          min: 0,
-        },
       },
     ],
     reviws: [
