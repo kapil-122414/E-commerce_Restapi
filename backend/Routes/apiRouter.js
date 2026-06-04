@@ -13,7 +13,7 @@ router.post("/generate-description", async (req, res) => {
       model: "gemini-2.5-flash-lite",
     });
     const prompt = `
-Product Name: ${Productname}
+Productname: ${Productname}
 Category: ${category}
 Brand: ${brand}
 Color: ${color}
