@@ -22,7 +22,7 @@ router.post(
     try {
       const {
         Productname,
-        description,
+        Description,
         shortDescription,
         slug,
         categoryId,
@@ -32,6 +32,7 @@ router.post(
         mrp,
         discount,
       } = req.body;
+      console.log(req.body);
       let variants = JSON.parse(req.body.variant || "[]");
 
       const productImage = req.files["Img"] ? req.files["Img"][0].path : null;
@@ -44,16 +45,14 @@ router.post(
           : null,
         size: v.size,
         colour: v.color,
-        price1: Number(v.price),
+        price1: Number(v.price1),
         stock: Number(v.stock),
         sku: v.sku,
-        mrp1: Number(v.mrp),
-        discount1: Number(v.discount),
       }));
 
       const newproduct = await productschema.create({
         Productname,
-        Description: description,
+        Description: Description,
         slug,
         shortdiscription: shortDescription,
         brand,
