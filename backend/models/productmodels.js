@@ -55,7 +55,11 @@ const productschema = new Schema(
         colour: String,
         price: Number,
         stock: Number,
+<<<<<<< HEAD
         sku: String,
+=======
+        sku:String,
+>>>>>>> 1076ec87c160eea1b27cdf83b6eb41bb2062bc27
       },
     ],
     reviws: [

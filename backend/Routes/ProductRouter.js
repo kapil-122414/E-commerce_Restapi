@@ -45,7 +45,9 @@ router.post(
           : null,
         size: v.size,
         colour: v.color,
+
         price: Number(v.price),
+
         stock: Number(v.stock),
         sku: v.sku,
       }));
