@@ -9,76 +9,65 @@ const { resolve } = require("dns");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 //post api
-router.post(
-  "/product",
-  uploads.fields([
-    { name: "Img", maxCount: 1 },
-    ...Array.from({ length: 20 }, (_, i) => ({
-      name: `variantImages_${i}`,
-      maxCount: 1,
-    })),
-  ]),
-  async (req, res) => {
-    try {
-      const {
-        Productname,
-        Description,
-        shortDescription,
-        slug,
-        categoryId,
-        brand,
-        status,
-        price,
-        mrp,
-        stock,
-        discount,
-      } = req.body;
-      console.log(req.body);
-      let variants = JSON.parse(req.body.variant || "[]");
+router.post("/product", uploads.single("Img"), async (req, res) => {
+  try {
+    const {
+      Productname,
+      Description,
+      shortdiscription,
+      slug,
+      categoryId,
+      brand,
+      status,
+      price,
+      mrp,
+      stock,
+      discount,
+    } = req.body;
 
-      const productImage = req.files["Img"] ? req.files["Img"][0].path : null;
-      variants = variants.map((v, i) => ({
-        image: req.files[`variantImages_${i}`]
-          ? {
-              url: req.files[`variantImages_${i}`][0].path,
-              public_id: req.files[`variantImages_${i}`][0].filename,
-            }
-          : null,
+    const variants = JSON.parse(req.body.variant || "[]");
+
+    const newProduct = await productschema.create({
+      Productname,
+      Description,
+      shortdiscription,
+      slug,
+      categoryId,
+      brand,
+      status,
+      stock: Number(stock),
+      price: Number(price),
+      mrp: Number(mrp),
+      discount: Number(discount),
+
+      Img: req.file
+        ? {
+            url: req.file.path,
+            public_id: req.file.filename,
+          }
+        : null,
+
+      variant: variants.map((v) => ({
         size: v.size,
-        colour: v.color,
-
-        price: Number(v.price),
-
-        stock: Number(v.stock),
+        color: v.color,
+        price: Number(v.price) || 0,
+        stock: Number(v.stock) || 0,
         sku: v.sku,
-      }));
+      })),
+    });
 
-      const newproduct = await productschema.create({
-        Productname,
-        Description: Description,
-        slug,
-        shortdiscription: shortDescription,
-        brand,
-        categoryId: categoryId,
-        status,
-        price: Number(price),
-        mrp: Number(mrp),
-        discount: Number(discount),
-
-        Img: {
-          url: productImage,
-        },
-
-        variant: variants,
-      });
-      console.log(newproduct);
-
-      res.status(200).json({ message: "successfully", newproduct });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  },
-);
+ 
+    res.status(201).json({
+      message: "Product created successfully",
+      data: newProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
 //get api
 router.get("/product", async (req, res) => {
   try {
@@ -113,7 +102,8 @@ router.get("/product", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("categoryId");
+      .populate("categoryId")
+      .populate("brand");
     const total = await productschema.countDocuments(filter);
     res.status(200).json({
       message: "successfully",
