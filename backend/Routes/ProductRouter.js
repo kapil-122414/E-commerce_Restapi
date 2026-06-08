@@ -30,6 +30,7 @@ router.post(
         status,
         price,
         mrp,
+        stock,
         discount,
       } = req.body;
       console.log(req.body);
