@@ -33,7 +33,7 @@ const productschema = new Schema(
 
     brand: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "brand",
+      ref: "Brand",
     },
     status: {
       type: String,

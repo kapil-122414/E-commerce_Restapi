@@ -15,4 +15,4 @@ const Brandschema = new Schema(
   },
 );
 
-module.exports = model("brands", Brandschema);
+module.exports = model("Brand", Brandschema);
