@@ -56,7 +56,6 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
       })),
     });
 
- 
     res.status(201).json({
       message: "Product created successfully",
       data: newProduct,
@@ -124,9 +123,9 @@ router.delete("/product/:_id", async (req, res) => {
     if (!data) {
       return res.status(404).json({ message: "not found data" });
     }
-    if (data.Img) {
+    if (data.Img?.public_id) {
       let publicId = data.Img.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(`products/${publicId}`);
+      await cloudinary.uploader.destroy(data.Img.public_id);
     }
     await productschema.findByIdAndDelete(req.params._id);
 
