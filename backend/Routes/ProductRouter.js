@@ -119,15 +119,13 @@ router.get("/product", async (req, res) => {
 router.delete("/product/:_id", async (req, res) => {
   try {
     const data = await productschema.findById(req.params._id);
-    console.log(data.Img);
-    console.log(data);
+
     if (!data) {
       return res.status(404).json({ message: "not found data" });
     }
     if (data.Img?.public_id) {
       console.log("after", data.Img);
       const imgdelete = await cloudinary.uploader.destroy(data.Img.public_id);
-      console.log("hyy");
     }
     await productschema.findByIdAndDelete(req.params._id);
 
@@ -146,14 +144,16 @@ router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
       return res.status(404).json({ message: "not found" });
     }
 
+    console.log(olddata.Img?.public_id);
     const updatedata = { ...req.body };
-
+    if (updatedata.variant) {
+      updatedata.variant = JSON.parse(updatedata.variant);
+    }
     if (req.file) {
-      if (olddata.Img) {
-        const publicId = olddata.Img.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(`products/${publicId}`);
+      if (olddata.Img?.public_id) {
+        await cloudinary.uploader.destroy(olddata.Img.public_id);
       }
-      updatedata.Img = req.file.path;
+      updatedata.Img = { url: req.file.path, public_id: req.file.filename };
     }
     const newdata = await productschema.findByIdAndUpdate(id, updatedata, {
       new: true,
