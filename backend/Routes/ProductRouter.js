@@ -166,17 +166,30 @@ router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
 });
 //get api
 // get api
-router.get("/product/:_id", async (req, res) => {
+router.get("/product/:id", async (req, res) => {
   try {
-    const data = await productschema.findById(req.params._id);
+    const { id } = req.params;
 
-    if (!data) {
-      return res.status(404).json({ message: "Data not found" });
+    const product = await productschema
+      .findById(id)
+      .populate("brand")
+      .populate("categoryId");
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
     }
 
-    res.status(200).json({ data });
+    res.status(200).json({
+      success: true,
+      data: product,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 });
 
