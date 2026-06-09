@@ -119,19 +119,21 @@ router.get("/product", async (req, res) => {
 router.delete("/product/:_id", async (req, res) => {
   try {
     const data = await productschema.findById(req.params._id);
-
+    console.log(data.Img);
+    console.log(data);
     if (!data) {
       return res.status(404).json({ message: "not found data" });
     }
     if (data.Img?.public_id) {
-      let publicId = data.Img.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(data.Img.public_id);
+      console.log("after", data.Img);
+      const imgdelete = await cloudinary.uploader.destroy(data.Img.public_id);
+      console.log("hyy");
     }
     await productschema.findByIdAndDelete(req.params._id);
 
     res.status(200).json({ message: "successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 });
 //patch
