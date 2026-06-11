@@ -26,6 +26,10 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
     } = req.body;
 
     const variants = JSON.parse(req.body.variant || "[]");
+    // Update API
+    const totalStock = variants.reduce((sum, item) => {
+      return sum + Number(item.stock || 0);
+    }, 0);
 
     const newProduct = await productschema.create({
       Productname,
@@ -35,7 +39,7 @@ router.post("/product", uploads.single("Img"), async (req, res) => {
       categoryId,
       brand,
       status,
-      stock: Number(stock),
+      stock: Number(totalStock),
       price: Number(price),
       mrp: Number(mrp),
       discount: Number(discount),
@@ -148,6 +152,11 @@ router.patch("/product/:_id", uploads.single("Img"), async (req, res) => {
     const updatedata = { ...req.body };
     if (updatedata.variant) {
       updatedata.variant = JSON.parse(updatedata.variant);
+    }
+    if (updatedata.variant) {
+      updatedata.stock = updatedata.variant.reduce((sum, item) => {
+        return sum + Number(item.stock || 0);
+      }, 0);
     }
     if (req.file) {
       if (olddata.Img?.public_id) {
