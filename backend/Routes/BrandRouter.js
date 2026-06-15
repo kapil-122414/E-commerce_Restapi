@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const brands = require("../models/Brand");
+const path = require("path");
+const uploads = require("../multer/imgmulter");
+const cloudinary = require("../config/cloudinary");
+const { resolve } = require("dns");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-router.post("/brand", async (req, res) => {
+router.post("/brand", uploads.single("Img"), async (req, res) => {
   try {
     const data = req.body;
-    
 
     if (!data.name) {
       return res.status(400).json({ message: "Brand name is required" });
@@ -14,7 +18,13 @@ router.post("/brand", async (req, res) => {
     if (finddata) {
       return res.status(400).json({ message: "Brand already exists" });
     }
-    const savedata = await brands.create(data);
+
+    const Image = req.file;
+    if (req.file && data.name) {
+      const Image = req.file;
+      const savedata = await brands.create({ data, Img: Image });
+    }
+
     res
       .status(200)
       .json({ message: "Brand created successfully", data: savedata });
