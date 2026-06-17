@@ -161,4 +161,6 @@ router.delete("/brand/:id", async (req, res) => {
   }
 });
 
+
+
 module.exports = router;
