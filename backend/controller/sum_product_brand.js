@@ -9,7 +9,7 @@ const totalproduct = async (req, res) => {
       return res.status(400).json({ message: "brand not found" });
     }
     const productcount = await Product.countDocuments({
-      brandId: id,
+      brand: id,
     });
     res.status(200).json({ brand, productcount });
   } catch (error) {

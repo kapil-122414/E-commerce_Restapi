@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
+
 const brands = require("../models/Brand");
+const Product = require("../models/productmodels");
 const path = require("path");
 const uploads = require("../multer/imgmulter");
 const cloudinary = require("../config/cloudinary");
@@ -46,7 +48,7 @@ router.get("/brand", async (req, res) => {
   try {
     let filter = {};
     let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 5;
+    let limit = parseInt(req.query.limit) || 4;
     let skip = (page - 1) * limit;
     let search = req.query.search || "";
     const status = req.query.status || "";
@@ -64,6 +66,19 @@ router.get("/brand", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+
+    const brandWithCount = await Promise.all(
+      data.map(async (brand) => {
+        const productcount = await Product.countDocuments({
+          brand: brand._id,
+        });
+        return {
+          ...brand.toObject(),
+          productcount,
+        };
+      }),
+    );
+
     const totalItems = await brands.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -71,7 +86,7 @@ router.get("/brand", async (req, res) => {
       page,
       totalItems,
       totalPages,
-      data,
+      data: brandWithCount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
