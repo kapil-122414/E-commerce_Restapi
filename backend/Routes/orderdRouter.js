@@ -2,9 +2,8 @@ const express = require("express");
 const router = express.Router();
 const orders = require("../models/orderdmodels");
 const carts = require("../models/Cartsmodels");
-const authmiddleware = require("../Middlerware/authmiddleware");
 
-router.post("/order", authmiddleware, async (req, res) => {
+router.post("/order", async (req, res) => {
   try {
     const userid = req.user.id;
     const id = req.body;
@@ -43,7 +42,7 @@ router.post("/order", authmiddleware, async (req, res) => {
   }
 });
 
-router.get("/order", authmiddleware, async (req, res) => {
+router.get("/order", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -80,7 +79,7 @@ router.get("/order", authmiddleware, async (req, res) => {
   }
 });
 
-router.delete("/order/:id", authmiddleware, async (req, res) => {
+router.delete("/order/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -91,7 +90,7 @@ router.delete("/order/:id", authmiddleware, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.patch("/order", authmiddleware, async (req, res) => {
+router.patch("/order", async (req, res) => {
   try {
     const validation = ["placed", "shipped", "deleverd", "cencelled"];
     const orderid = req.params.id;
@@ -113,7 +112,7 @@ router.patch("/order", authmiddleware, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.get("/order/:id", authmiddleware, async (req, res) => {
+router.get("/order/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const data = await orders.findById(id);
