@@ -4,14 +4,14 @@ const orderd = new Schema(
   {
     userid: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "register",
       required: true,
     },
     items: [
       {
         productid: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "products",
+          ref: "Product",
         },
         name: String,
         price: Number,

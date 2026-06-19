@@ -6,8 +6,9 @@ const authmiddleware = require("../Middlerware/authmiddleware");
 router.post("/carts", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
-
+    console.log(req.body);
     const { ProductId, variants, Quantity } = req.body;
+
     const products = await product.findById(ProductId);
 
     if (!products) {

@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const orders = require("../models/orderdmodels");
 const carts = require("../models/Cartsmodels");
+const authmiddleware = require("../Middlerware/authmiddleware");
 
-router.post("/order", async (req, res) => {
+router.post("/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
     const id = req.body;
@@ -42,7 +43,7 @@ router.post("/order", async (req, res) => {
   }
 });
 
-router.get("/order", async (req, res) => {
+router.get("/order", authmiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -79,7 +80,7 @@ router.get("/order", async (req, res) => {
   }
 });
 
-router.delete("/order/:id", async (req, res) => {
+router.delete("/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -90,7 +91,7 @@ router.delete("/order/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.patch("/order", async (req, res) => {
+router.patch("/order", authmiddleware, async (req, res) => {
   try {
     const validation = ["placed", "shipped", "deleverd", "cencelled"];
     const orderid = req.params.id;
@@ -112,7 +113,7 @@ router.patch("/order", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.get("/order/:id", async (req, res) => {
+router.get("/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
     const data = await orders.findById(id);
@@ -121,6 +122,21 @@ router.get("/order/:id", async (req, res) => {
       success: true,
       data,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/// show the data in admin
+
+router.get("/admin/order", authmiddleware, async (req, res) => {
+  try {
+    const allorder = await orders
+      .find()
+      .populate("userid", "Email Role")
+      .populate("items.productid");
+
+    res.status(200).json(allorder);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

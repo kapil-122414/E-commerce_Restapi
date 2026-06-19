@@ -16,6 +16,7 @@ router.post(
   async (req, res) => {
     try {
       const data = req.body;
+    
 
       if (!data.name) {
         return res.status(400).json({ message: "Brand name is required" });

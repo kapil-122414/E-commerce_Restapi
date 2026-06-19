@@ -37,11 +37,11 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { Email, Password } = req.body;
+    console.log(req.body);
     const Emailfind = await registerschma.findOne({ Email: Email });
 
     if (!Emailfind) {
       return res.status(400).json({ message: "Email not register" });
-      
     }
 
     const passwordcheck = await bcrypt.compare(Password, Emailfind.Password);
@@ -54,7 +54,6 @@ router.post("/login", async (req, res) => {
       {
         id: Emailfind._id,
         Email: Email,
-        
       },
       "secretkey",
       { expiresIn: "1h" },
