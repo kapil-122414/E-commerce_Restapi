@@ -1,5 +1,6 @@
 const modelschema = require("../models/schema");
 const express = require("express");
+const authmiddleware = require("../Middlerware/authmiddleware");
 const router = express.Router();
 const fs = require("fs");
 const path = require("path");
@@ -11,6 +12,7 @@ const { stat } = require("fs/promises");
 //post api
 router.post(
   "/category",
+  authmiddleware,
   (req, res, next) => {
     uploads.single("Img")(req, res, (err) => {
       if (err) {
@@ -57,7 +59,7 @@ router.post(
   },
 );
 //get api
-router.get("/category", async (req, res) => {
+router.get("/category", authmiddleware, async (req, res) => {
   try {
     let filter = {};
 
@@ -98,7 +100,7 @@ router.get("/category", async (req, res) => {
   }
 });
 //delete api
-router.delete("/category/:_id", async (req, res) => {
+router.delete("/category/:_id", authmiddleware, async (req, res) => {
   try {
     const data = await modelschema.findById(req.params._id);
 
@@ -121,43 +123,48 @@ router.delete("/category/:_id", async (req, res) => {
 });
 
 //update
-router.patch("/category/:_id", uploads.single("Img"), async (req, res) => {
-  try {
-    const id = req.params._id;
+router.patch(
+  "/category/:_id",
+  authmiddleware,
+  uploads.single("Img"),
+  async (req, res) => {
+    try {
+      const id = req.params._id;
 
-    const olddata = await modelschema.findById(id);
+      const olddata = await modelschema.findById(id);
 
-    if (!olddata) {
-      return res.status(404).json({ meaage: "data not found" });
-    }
-
-    const updateddata = { ...req.body };
-
-    if (req.file) {
-      // old image delete from cloudinary
-      if (olddata.Img) {
-        const publicId = olddata.Img.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(`categories/${publicId}`);
+      if (!olddata) {
+        return res.status(404).json({ meaage: "data not found" });
       }
 
-      updateddata.Img = req.file.path; // new URL
-    }
-    const newdata = await modelschema.findByIdAndUpdate(id, updateddata, {
-      new: true,
-    });
+      const updateddata = { ...req.body };
 
-    res.status(200).json({ message: "successfully", newdata });
-  } catch (err) {
-    res.status(500).json({ message: "server error" });
-  }
-});
+      if (req.file) {
+        // old image delete from cloudinary
+        if (olddata.Img) {
+          const publicId = olddata.Img.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(`categories/${publicId}`);
+        }
+
+        updateddata.Img = req.file.path; // new URL
+      }
+      const newdata = await modelschema.findByIdAndUpdate(id, updateddata, {
+        new: true,
+      });
+
+      res.status(200).json({ message: "successfully", newdata });
+    } catch (err) {
+      res.status(500).json({ message: "server error" });
+    }
+  },
+);
 // get api
-router.get("/category/all", async (req, res) => {
+router.get("/category/all", authmiddleware, async (req, res) => {
   const data = await modelschema.find().select("_id Categoryname brands");
   res.json(data);
 });
 
-router.get("/category/:_id", async (req, res) => {
+router.get("/category/:_id", authmiddleware, async (req, res) => {
   try {
     const data = await modelschema.findById(req.params._id);
 
@@ -172,7 +179,7 @@ router.get("/category/:_id", async (req, res) => {
 });
 
 //desciption api
-router.post("/ai-description", async (req, res) => {
+router.post("/ai-description", authmiddleware, async (req, res) => {
   try {
     const { Categoryname, productname } = req.body;
     const Response = await fetch("http://localhost:11434/api/generate", {
