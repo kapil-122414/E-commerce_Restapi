@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const user = require("../models/Registermodels");
 const carts = require("../models/Cartsmodels");
 const product = require("../models/productmodels");
 const authmiddleware = require("../Middlerware/authmiddleware");
@@ -25,7 +26,11 @@ router.post("/carts", authmiddleware, async (req, res) => {
       totalprice: price * Quantity,
     });
 
-    res.status(200).json({ message: "successfully", newdata });
+    const totalItems = await carts.countDocuments({
+      UserId: userid,
+    });
+    console.log(totalItems);
+    res.status(200).json({ message: "successfully", newdata, totalItems });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

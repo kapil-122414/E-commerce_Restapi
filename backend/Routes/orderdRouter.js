@@ -36,8 +36,10 @@ router.post("/order", authmiddleware, async (req, res) => {
       shippingAddress: id.shippingaddress,
     });
     const deletdata = await carts.deleteMany({ UserId: userid });
-
-    res.status(200).json({ message: "orderd place successfuly", newOrder });
+    const totalorder = await orders.countDocuments({ userid });
+    res
+      .status(200)
+      .json({ message: "orderd place successfuly", newOrder, totalorder });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -136,7 +138,7 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
       .populate("userid", "Email Role")
       .populate("items.productid");
 
-    res.status(200).json(allorder);
+    res.status(200).json({ allorder });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
