@@ -133,14 +133,24 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
 
 router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
+    const userid = req.user;
+
+    if (userid.Role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. Admin only.",
+      });
+    }
+
     const allorder = await orders
       .find()
       .populate("userid", "Email Role")
       .populate("items.productid");
 
-    res.status(200).json({ allorder });
+    return res.status(200).json({ allorder });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 });
 
