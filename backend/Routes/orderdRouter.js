@@ -134,6 +134,7 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
 router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user;
+    console.log(userid);
 
     if (userid.Role !== "admin") {
       return res.status(403).json({

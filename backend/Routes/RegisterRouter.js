@@ -49,11 +49,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "enter correct password" });
     }
     const Role = Emailfind.Role;
+    console.log(Role);
 
     const Token = jwt.sign(
       {
         id: Emailfind._id,
         Email: Email,
+        Role: Role,
       },
       "secretkey",
       { expiresIn: "1h" },
