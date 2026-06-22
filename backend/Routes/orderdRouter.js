@@ -135,23 +135,55 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user;
     console.log(userid);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+    const status = req.query.status || "";
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+    if (search) {
+      filter["shippingAddress.name"] = { $regex: search, $options: "i" };
+    }
 
     if (userid.Role !== "admin") {
       return res.status(403).json({
         message: "Access denied. Admin only.",
       });
     }
-
+    const total = await orders.countDocuments(filter);
     const allorder = await orders
-      .find()
+      .find(filter)
       .populate("userid", "Email Role")
-      .populate("items.productid");
+      .populate("items.productid")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip);
 
-    return res.status(200).json({ allorder });
+    return res.status(200).json({
+      allorder,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,
     });
+  }
+});
+
+router.get("/admin/order/:id", authmiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const data = await orders.findById(id);
+    console.log(data);
+
+    res.status(200).json({ succes: true, data });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
