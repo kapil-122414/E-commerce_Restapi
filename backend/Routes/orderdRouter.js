@@ -3,6 +3,7 @@ const router = express.Router();
 const orders = require("../models/orderdmodels");
 const carts = require("../models/Cartsmodels");
 const authmiddleware = require("../Middlerware/authmiddleware");
+const user = require("../models/Registermodels");
 
 router.post("/order", authmiddleware, async (req, res) => {
   try {
@@ -58,6 +59,7 @@ router.get("/order", authmiddleware, async (req, res) => {
     if (status) {
       filter.status = status;
     }
+
     if (search) {
       filter["shippingAddress.name"] = { $regex: search, $options: "i" };
     }
@@ -145,7 +147,25 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
       filter.status = status;
     }
     if (search) {
-      filter["shippingAddress.name"] = { $regex: search, $options: "i" };
+      const users = await user.find({
+        Email: { $regex: search, $options: "i" },
+      });
+
+      const userIds = users.map((item) => item._id);
+
+      filter.$or = [
+        {
+          "shippingAddress.name": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          userid: {
+            $in: userIds,
+          },
+        },
+      ];
     }
 
     if (userid.Role !== "admin") {
