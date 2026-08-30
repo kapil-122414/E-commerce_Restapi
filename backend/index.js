@@ -15,6 +15,7 @@ const orderd = require("./Routes/orderdRouter");
 const payment = require("./Routes/paymentRouter");
 const brands = require("./Routes/BrandRouter");
 const apiroute = require("./Routes/apiRouter");
+const dashboardrouter = require("./Routes/DashboardRouter");
 // ================= MIDDLEWARE =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,6 +50,7 @@ app.use("/api", payment);
 app.use("/api", brands);
 app.use("/uploads", express.static("uploads"));
 app.use("/api", apiroute);
+app.use("/api", dashboardrouter);
 
 // ================= TEST ROUTE =================
 app.get("/api", (req, res) => {
