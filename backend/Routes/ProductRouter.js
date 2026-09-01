@@ -81,7 +81,6 @@ router.post(
 router.get("/product/count-by-category", authmiddleware, async (req, res) => {
   try {
     const counts = await productschema.aggregate([
-      { $match: { status: "active" } },
       { $group: { _id: "$categoryId", count: { $sum: 1 } } },
     ]);
     res.status(200).json({ success: true, data: counts });
