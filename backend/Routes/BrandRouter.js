@@ -176,4 +176,9 @@ router.delete("/brand/:id", authmiddleware, async (req, res) => {
   }
 });
 
+router.get("/brand/all", authmiddleware, async (req, res) => {
+  const data = await brands.find().select("_id name Img");
+  res.json(data);
+});
+
 module.exports = router;
