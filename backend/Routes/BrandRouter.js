@@ -99,6 +99,11 @@ router.get("/brand", authmiddleware, async (req, res) => {
   }
 });
 
+router.get("/brand/all", authmiddleware, async (req, res) => {
+  const data = await brands.find().select("_id name status");
+  res.json(data);
+});
+
 router.get("/brand/:id", authmiddleware, async (req, res) => {
   try {
     const data = await brands.findById(req.params.id);
@@ -174,11 +179,6 @@ router.delete("/brand/:id", authmiddleware, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
-
-router.get("/brand/all", authmiddleware, async (req, res) => {
-  const data = await brands.find().select("_id name status");
-  res.json(data);
 });
 
 module.exports = router;
