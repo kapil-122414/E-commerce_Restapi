@@ -77,6 +77,19 @@ router.post(
     }
   },
 );
+//get product count by category
+router.get("/product/count-by-category", authmiddleware, async (req, res) => {
+  try {
+    const counts = await productschema.aggregate([
+      { $match: { status: "active" } },
+      { $group: { _id: "$categoryId", count: { $sum: 1 } } },
+    ]);
+    res.status(200).json({ success: true, data: counts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 //get api
 router.get("/product", authmiddleware, async (req, res) => {
   try {
