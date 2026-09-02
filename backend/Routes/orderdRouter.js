@@ -198,10 +198,11 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
 router.get("/admin/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await orders.findById(id);
-    console.log(data);
+    const data = await orders.findById(id)
+      .populate("userid", "Email")
+      .populate("items.productid");
 
-    res.status(200).json({ succes: true, data });
+    res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
