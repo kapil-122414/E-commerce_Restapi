@@ -24,6 +24,14 @@ const orderd = new Schema(
       type: Number,
       required: true,
     },
+    shippingCost: {
+      type: Number,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       default: "pending",

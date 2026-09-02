@@ -17,6 +17,8 @@ router.post("/order", authmiddleware, async (req, res) => {
       return res.status(404).json({ message: "cartitems is not" });
     }
     let totalamount = 0;
+    const shippingCost = Number(id.shippingCost) || 0;
+    const discount = Number(id.discount) || 0;
     const orderditem = cartitems.map((item) => {
       const totalprice = item.totalprice || item.price * item.Quality;
       totalamount += totalprice;
@@ -30,10 +32,13 @@ router.post("/order", authmiddleware, async (req, res) => {
         totalprice,
       };
     });
+    const grandTotal = totalamount + shippingCost - discount;
     const newOrder = await orders.create({
       userid,
       items: orderditem,
-      totalamount,
+      totalamount: grandTotal,
+      shippingCost,
+      discount,
       shippingAddress: id.shippingaddress,
     });
     const deletdata = await carts.deleteMany({ UserId: userid });
@@ -203,6 +208,32 @@ router.get("/admin/order/:id", authmiddleware, async (req, res) => {
       .populate("items.productid");
 
     res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.patch("/admin/order/:id", authmiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updateData = req.body;
+
+    if (updateData.shippingAddress) {
+      updateData.shippingAddress.Phoneno = Number(updateData.shippingAddress.Phoneno);
+      updateData.shippingAddress.pinecode = Number(updateData.shippingAddress.pinecode);
+    }
+    if (updateData.shippingCost !== undefined) updateData.shippingCost = Number(updateData.shippingCost);
+    if (updateData.discount !== undefined) updateData.discount = Number(updateData.discount);
+
+    const updatedOrder = await orders.findByIdAndUpdate(id, updateData, { new: true })
+      .populate("userid", "Email")
+      .populate("items.productid");
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({ success: true, data: updatedOrder });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
