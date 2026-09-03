@@ -148,6 +148,8 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     const search = req.query.search || "";
     const status = req.query.status || "";
     const sort = req.query.sort || "-createdAt";
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
     const filter = {};
     if (status) {
       filter.status = status;
@@ -172,6 +174,15 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
           },
         },
       ];
+    }
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
+      }
     }
 
     if (userid.Role !== "admin") {
