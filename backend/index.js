@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://e-commerce-dashboard-1.netlify.app"
+  "https://e-commerce-dashboard-1.netlify.app",
 ];
 
 app.use(

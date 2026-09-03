@@ -90,7 +90,8 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       sku: p.variant?.[0]?.sku,
       slug: p.slug,
       image: p.Img?.url,
-      url: `/products/${p._id}`,
+      url: `/products`,
+      searchTerm: p.Productname,
     }));
 
     const formattedOrders = orders.map((o) => ({
@@ -100,7 +101,8 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       subtitle: `Customer: ${o.shippingAddress?.name || o.userid?.Email} | Status: ${o.status}`,
       status: o.status,
       customerEmail: o.userid?.Email,
-      url: `/orders/${o._id}`,
+      url: `/orders`,
+      searchTerm: o.shippingAddress?.name || o.userid?.Email || "",
     }));
 
     const formattedCustomers = customers.map((c) => ({
@@ -109,7 +111,8 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       title: c.Email,
       subtitle: "Customer",
       email: c.Email,
-      url: `/customers/${c._id}`,
+      url: `/customers`,
+      searchTerm: c.Email,
     }));
 
     const formattedCategories = categories.map((cat) => ({
@@ -118,7 +121,8 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       title: cat.Categoryname,
       subtitle: `Slug: ${cat.Slug}`,
       slug: cat.Slug,
-      url: `/categories/${cat._id}`,
+      url: `/categories`,
+      searchTerm: cat.Categoryname,
     }));
 
     const formattedBrands = brands.map((b) => ({
@@ -126,7 +130,8 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       type: "brand",
       title: b.name,
       subtitle: "Brand",
-      url: `/brands/${b._id}`,
+      url: `/brands`,
+      searchTerm: b.name,
     }));
 
     const allResults = [
