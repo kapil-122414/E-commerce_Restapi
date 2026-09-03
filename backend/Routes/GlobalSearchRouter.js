@@ -33,12 +33,21 @@ router.get("/global-search", authmiddleware, async (req, res) => {
     const isValidObjectId = mongoose.Types.ObjectId.isValid(searchTerm);
     const objectIdSearch = isValidObjectId ? { _id: searchTerm } : null;
 
+    // Also search for short order ID format (e.g., ORD-10245)
+    const shortOrderIdMatch = searchTerm.match(/^ORD[-]?([a-fA-F0-9]{8,24})$/i);
+    const shortOrderIdSearch = shortOrderIdMatch ? { _id: shortOrderIdMatch[1] } : null;
+
+    // Get brand IDs that match the search term for product brand search
+    const matchingBrands = await Brand.find({ name: searchRegex }).select("_id").lean();
+    const brandIds = matchingBrands.map(b => b._id);
+
     const [products, orders, customers, categories, brands] = await Promise.all([
       Product.find({
         $or: [
           { Productname: searchRegex },
           { slug: searchRegex },
           { "variant.sku": searchRegex },
+          ...(brandIds.length > 0 ? [{ brand: { $in: brandIds } }] : []),
         ],
       })
         .populate("brand", "name")
@@ -49,6 +58,7 @@ router.get("/global-search", authmiddleware, async (req, res) => {
       Order.find({
         $or: [
           ...(objectIdSearch ? [objectIdSearch] : []),
+          ...(shortOrderIdSearch ? [shortOrderIdSearch] : []),
           { "shippingAddress.name": searchRegex },
         ],
       })
