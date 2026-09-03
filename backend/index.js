@@ -17,6 +17,7 @@ const brands = require("./Routes/BrandRouter");
 const apiroute = require("./Routes/apiRouter");
 const dashboardrouter = require("./Routes/DashboardRouter");
 const customerrouter = require("./Routes/CustomerRouter");
+const globalsearchrouter = require("./Routes/GlobalSearchRouter");
 // ================= MIDDLEWARE =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -66,6 +67,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api", apiroute);
 app.use("/api", dashboardrouter);
 app.use("/api", customerrouter);
+app.use("/api", globalsearchrouter);
 
 // ================= TEST ROUTE =================
 app.get("/api", (req, res) => {
