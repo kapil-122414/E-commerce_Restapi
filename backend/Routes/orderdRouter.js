@@ -147,6 +147,7 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || "";
     const status = req.query.status || "";
+    const sort = req.query.sort || "-createdAt";
     const filter = {};
     if (status) {
       filter.status = status;
@@ -179,11 +180,19 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
       });
     }
     const total = await orders.countDocuments(filter);
+    
+    const sortObj = {};
+    if (sort.startsWith('-')) {
+      sortObj[sort.substring(1)] = -1;
+    } else {
+      sortObj[sort] = 1;
+    }
+    
     const allorder = await orders
       .find(filter)
       .populate("userid", "Email Role")
       .populate("items.productid")
-      .sort({ createdAt: -1 })
+      .sort(sortObj)
       .limit(limit)
       .skip(skip);
 
