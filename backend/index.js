@@ -19,6 +19,7 @@ const dashboardrouter = require("./Routes/DashboardRouter");
 const customerrouter = require("./Routes/CustomerRouter");
 const globalsearchrouter = require("./Routes/GlobalSearchRouter");
 const analyticsrouter = require("./Routes/AnalyticsRouter");
+const settingrouter = require("./Routes/SettingRouter");
 // ================= MIDDLEWARE =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -70,6 +71,7 @@ app.use("/api", dashboardrouter);
 app.use("/api", customerrouter);
 app.use("/api", globalsearchrouter);
 app.use("/api", analyticsrouter);
+app.use("/api", settingrouter);
 
 // ================= TEST ROUTE =================
 app.get("/api", (req, res) => {
