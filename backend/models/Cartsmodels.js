@@ -1,9 +1,9 @@
-const { Schema, model, default: mongoose, Mongoose } = require("mongoose");
+const { Schema, model, default: mongoose } = require("mongoose");
 const carts = new Schema(
   {
     UserId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "userId",
+      ref: "register",
     },
     ProductId: {
       type: mongoose.Schema.Types.ObjectId,

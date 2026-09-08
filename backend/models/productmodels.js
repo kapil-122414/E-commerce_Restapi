@@ -1,4 +1,4 @@
-const { Schema, moded, default: mongoose, model } = require("mongoose");
+const { Schema, model, default: mongoose } = require("mongoose");
 
 const productschema = new Schema(
   {

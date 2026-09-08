@@ -1,6 +1,4 @@
-const { mongoose } = require("mongoose");
-
-const { Schema, model } = require("mongoose");
+const { Schema, model, default: mongoose } = require("mongoose");
 
 const payments = new Schema(
   {
@@ -11,7 +9,7 @@ const payments = new Schema(
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "register",
       required: true,
     },
     amount: {
@@ -33,16 +31,16 @@ const payments = new Schema(
     },
     paymentstatus: {
       type: String,
-      default: "panding",
+      default: "pending",
     },
     status: {
       type: String,
-      default: "panding",
-      enum: ["panding", "completed", "failed"],
+      default: "pending",
+      enum: ["pending", "completed", "failed"],
     },
     shippingAdress: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "order",
+      ref: "orders",
     },
   },
   {

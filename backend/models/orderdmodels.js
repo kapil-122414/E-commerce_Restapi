@@ -38,7 +38,7 @@ const orderd = new Schema(
     },
     paymentstatus: {
       type: String,
-      default: "panding",
+      default: "pending",
     },
     shippingAddress: {
       name: {
