@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 const express = require("express");
-const app = express();
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const connectdb = require("./config/bd");
@@ -20,10 +21,19 @@ const customerrouter = require("./Routes/CustomerRouter");
 const globalsearchrouter = require("./Routes/GlobalSearchRouter");
 const analyticsrouter = require("./Routes/AnalyticsRouter");
 const settingrouter = require("./Routes/SettingRouter");
-// ================= MIDDLEWARE =================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+const app = express();
+
+// ================= SECURITY MIDDLEWARE =================
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false,
+}));
+
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://e-commerce-dashboard-1.netlify.app",
@@ -32,8 +42,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("🔍 CORS Origin:", origin);
-      console.log("🔍 Allowed Origins:", allowedOrigins);
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -41,8 +49,31 @@ app.use(
       }
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+// ================= RATE LIMITING =================
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: "Too many requests, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: "Too many requests, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/register", authLimiter);
+app.use("/api/login", authLimiter);
+app.use("/api", apiLimiter);
 
 // ================= DATABASE =================
 connectdb();
@@ -81,10 +112,12 @@ app.get("/api", (req, res) => {
 // ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.message);
+  const isDevelopment = process.env.NODE_ENV !== "production";
   res.status(500).json({
     success: false,
     errorName: err.name,
-    message: err.message,
+    message: isDevelopment ? err.message : "Internal server error",
+    ...(isDevelopment && { stack: err.stack }),
   });
 });
 

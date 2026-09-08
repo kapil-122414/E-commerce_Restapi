@@ -8,22 +8,25 @@ const user = require("../models/Registermodels");
 router.post("/order", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
-    const id = req.body;
+    const { shippingaddress, shippingCost, discount } = req.body;
 
     const cartitems = await carts
       .find({ UserId: userid })
       .populate("ProductId");
+
     if (!cartitems.length) {
-      return res.status(404).json({ message: "cartitems is not" });
+      return res.status(400).json({ message: "Cart is empty" });
     }
+
+    if (!shippingaddress || !shippingaddress.name || !shippingaddress.address) {
+      return res.status(400).json({ message: "Shipping address is required" });
+    }
+
     let totalamount = 0;
-    const shippingCost = Number(id.shippingCost) || 0;
-    const discount = Number(id.discount) || 0;
     const orderditem = cartitems.map((item) => {
-      const totalprice = item.totalprice || item.price * item.Quality;
+      const totalprice = item.totalprice || item.price * item.Quantity;
       totalamount += totalprice;
 
-      console.log(totalamount);
       return {
         product: item.ProductId._id,
         name: item.ProductId?.Productname,
@@ -32,22 +35,28 @@ router.post("/order", authmiddleware, async (req, res) => {
         totalprice,
       };
     });
-    const grandTotal = totalamount + shippingCost - discount;
+
+    const shippingCostNum = Number(shippingCost) || 0;
+    const discountNum = Number(discount) || 0;
+    const grandTotal = totalamount + shippingCostNum - discountNum;
+
     const newOrder = await orders.create({
       userid,
       items: orderditem,
       totalamount: grandTotal,
-      shippingCost,
-      discount,
-      shippingAddress: id.shippingaddress,
+      shippingCost: shippingCostNum,
+      discount: discountNum,
+      shippingAddress: shippingaddress,
     });
-    const deletdata = await carts.deleteMany({ UserId: userid });
+
+    await carts.deleteMany({ UserId: userid });
     const totalorder = await orders.countDocuments({ userid });
+
     res
-      .status(200)
-      .json({ message: "orderd place successfuly", newOrder, totalorder });
+      .status(201)
+      .json({ message: "Order placed successfully", newOrder, totalorder });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to place order" });
   }
 });
 
@@ -85,28 +94,39 @@ router.get("/order", authmiddleware, async (req, res) => {
       totalData: total,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch orders" });
   }
 });
 
 router.delete("/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
+    const userid = req.user.id;
 
-    const deletedta = await orders.findByIdAndDelete(id);
+    const deletedta = await orders.findOneAndDelete({ _id: id, userid });
 
-    res.status(200).json({ message: "successfuly", deletedta });
+    if (!deletedta) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({ message: "Order deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to delete order" });
   }
 });
-router.patch("/order", authmiddleware, async (req, res) => {
+
+router.patch("/order/:id", authmiddleware, async (req, res) => {
   try {
-    const validation = ["placed", "shipped", "deleverd", "cencelled"];
+    const validation = ["placed", "shipped", "delivered", "cancelled"];
     const orderid = req.params.id;
     const { status } = req.body;
+
+    if (!validation.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
     const updateorder = await orders.findOneAndUpdate(
-      { id: orderid, userid: req.user.id },
+      { _id: orderid, userid: req.user.id },
       { status },
       { new: true },
     );
@@ -114,25 +134,29 @@ router.patch("/order", authmiddleware, async (req, res) => {
     if (!updateorder) {
       return res.status(404).json({ message: "Order not found" });
     }
-    if (!validation.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
     res.status(200).json({ message: "success", updateorder });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to update order" });
   }
 });
+
 router.get("/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await orders.findById(id);
+    const data = await orders.findOne({ _id: id, userid: req.user.id })
+      .populate("shippingAddress")
+      .populate("items.product");
+
+    if (!data) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
     res.status(200).json({
       success: true,
       data,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch order" });
   }
 });
 
@@ -140,8 +164,12 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
 
 router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
-    const userid = req.user;
-    console.log(userid);
+    if (req.user.Role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. Admin only.",
+      });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -151,13 +179,15 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
     const filter = {};
+
     if (status) {
       filter.status = status;
     }
+
     if (search) {
       const users = await user.find({
         Email: { $regex: search, $options: "i" },
-      });
+      }).select("_id");
 
       const userIds = users.map((item) => item._id);
 
@@ -175,6 +205,7 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
         },
       ];
     }
+
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) {
@@ -185,24 +216,19 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
       }
     }
 
-    if (userid.Role !== "admin") {
-      return res.status(403).json({
-        message: "Access denied. Admin only.",
-      });
-    }
     const total = await orders.countDocuments(filter);
-    
+
     const sortObj = {};
     if (sort.startsWith('-')) {
       sortObj[sort.substring(1)] = -1;
     } else {
       sortObj[sort] = 1;
     }
-    
+
     const allorder = await orders
       .find(filter)
       .populate("userid", "Email Role")
-      .populate("items.productid")
+      .populate("items.product")
       .sort(sortObj)
       .limit(limit)
       .skip(skip);
@@ -215,39 +241,55 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      message: "Failed to fetch orders",
     });
   }
 });
 
 router.get("/admin/order/:id", authmiddleware, async (req, res) => {
   try {
+    if (req.user.Role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admin only." });
+    }
+
     const id = req.params.id;
     const data = await orders.findById(id)
       .populate("userid", "Email")
-      .populate("items.productid");
+      .populate("items.product");
+
+    if (!data) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
     res.status(200).json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch order" });
   }
 });
 
 router.patch("/admin/order/:id", authmiddleware, async (req, res) => {
   try {
+    if (req.user.Role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admin only." });
+    }
+
     const id = req.params.id;
     const updateData = req.body;
 
     if (updateData.shippingAddress) {
-      updateData.shippingAddress.Phoneno = Number(updateData.shippingAddress.Phoneno);
-      updateData.shippingAddress.pinecode = Number(updateData.shippingAddress.pinecode);
+      if (updateData.shippingAddress.Phoneno) {
+        updateData.shippingAddress.Phoneno = Number(updateData.shippingAddress.Phoneno);
+      }
+      if (updateData.shippingAddress.pinecode) {
+        updateData.shippingAddress.pinecode = Number(updateData.shippingAddress.pinecode);
+      }
     }
     if (updateData.shippingCost !== undefined) updateData.shippingCost = Number(updateData.shippingCost);
     if (updateData.discount !== undefined) updateData.discount = Number(updateData.discount);
 
     const updatedOrder = await orders.findByIdAndUpdate(id, updateData, { new: true })
       .populate("userid", "Email")
-      .populate("items.productid");
+      .populate("items.product");
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
@@ -255,7 +297,7 @@ router.patch("/admin/order/:id", authmiddleware, async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedOrder });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to update order" });
   }
 });
 

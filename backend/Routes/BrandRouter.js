@@ -3,38 +3,31 @@ const router = express.Router();
 const authmiddleware = require("../Middlerware/authmiddleware");
 const brands = require("../models/Brand");
 const Product = require("../models/productmodels");
-const path = require("path");
 const uploads = require("../multer/imgmulter");
 const cloudinary = require("../config/cloudinary");
-const { resolve } = require("dns");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const { brandValidation, mongoIdParam, paginationValidation } = require("../middleware/validation");
 
 router.post(
   "/brand",
   authmiddleware,
   uploads.single("Img"),
+  brandValidation,
   async (req, res) => {
     try {
-      const data = req.body;
-    
-
-      if (!data.name) {
-        return res.status(400).json({ message: "Brand name is required" });
-      }
-      console.log(req.file);
       if (!req.file) {
         return res.status(400).json({
           message: "Brand image is required",
         });
       }
-      const finddata = await brands.findOne({ name: data.name });
+
+      const finddata = await brands.findOne({ name: req.body.name });
       if (finddata) {
         return res.status(400).json({ message: "Brand already exists" });
       }
 
       const savedata = await brands.create({
-        name: data.name,
-        status: data.status,
+        name: req.body.name,
+        status: req.body.status,
         Img: {
           url: req.file.path,
           public_id: req.file.filename,
@@ -42,19 +35,19 @@ router.post(
       });
 
       res
-        .status(200)
+        .status(201)
         .json({ message: "Brand created successfully", data: savedata });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Failed to create brand" });
     }
   },
 );
 
-router.get("/brand", authmiddleware, async (req, res) => {
+router.get("/brand", authmiddleware, paginationValidation, async (req, res) => {
   try {
     let filter = {};
     let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 4;
+    let limit = parseInt(req.query.limit) || 10;
     let skip = (page - 1) * limit;
     let search = req.query.search || "";
     const status = req.query.status || "";
@@ -95,7 +88,7 @@ router.get("/brand", authmiddleware, async (req, res) => {
       data: brandWithCount,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch brands" });
   }
 });
 
@@ -104,7 +97,7 @@ router.get("/brand/all", authmiddleware, async (req, res) => {
   res.json(data);
 });
 
-router.get("/brand/:id", authmiddleware, async (req, res) => {
+router.get("/brand/:id", authmiddleware, mongoIdParam, async (req, res) => {
   try {
     const data = await brands.findById(req.params.id);
 
@@ -114,13 +107,14 @@ router.get("/brand/:id", authmiddleware, async (req, res) => {
 
     res.status(200).json({ data });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch brand" });
   }
 });
 
 router.patch(
   "/brand/:id",
   authmiddleware,
+  mongoIdParam,
   uploads.single("Img"),
   async (req, res) => {
     try {
@@ -159,12 +153,12 @@ router.patch(
       );
       res.status(200).json({ message: "Updated successfully", data: updated });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Failed to update brand" });
     }
   },
 );
 
-router.delete("/brand/:id", authmiddleware, async (req, res) => {
+router.delete("/brand/:id", authmiddleware, mongoIdParam, async (req, res) => {
   try {
     const data = await brands.findById(req.params.id);
 
@@ -177,7 +171,7 @@ router.delete("/brand/:id", authmiddleware, async (req, res) => {
     await brands.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to delete brand" });
   }
 });
 

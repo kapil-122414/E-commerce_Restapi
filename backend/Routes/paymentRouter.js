@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const PAYMENTS = require("../models/Paymentmodel"); //is me schema h
+const PAYMENTS = require("../models/Paymentmodel");
 const order = require("../models/orderdmodels");
 const crypto = require("crypto");
 const authmiddleware = require("../Middlerware/authmiddleware");
@@ -17,29 +17,35 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
       paymentstatus,
     } = req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required payment verification fields",
+      });
+    }
+
     const userId = req.user.id;
     const orderData = await order
       .findOne({ _id: orderId, userid: userId })
       .populate("shippingAddress");
+
     if (!orderData) {
-      return res.status(404).json({ message: "orderd not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    const testemode = true;
-    if (!testemode) {
-      const body = razorpay_order_id + "|" + razorpay_payment_id;
-      const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-        .update(body)
-        .digest("hex");
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
 
-      if (expectedSignature !== razorpay_signature) {
-        return res.status(400).json({
-          success: false,
-          message: "Payment verification failed",
-        });
-      }
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed",
+      });
     }
+
     const existingPayment = await PAYMENTS.findOne({
       paymentid: razorpay_payment_id,
     }).populate({
@@ -55,50 +61,43 @@ router.post("/payment/verify", authmiddleware, async (req, res) => {
         message: "Payment already recorded",
       });
     }
+
+    let paymentData = {
+      userId,
+      amount: orderData.totalamount,
+      orderId,
+      orderdpaymentid: razorpay_order_id,
+      shippingAdress: orderData.shippingAddress._id,
+      paymentmethod: paymentmethod,
+      paymentstatus: paymentstatus || "pending",
+    };
+
     if (paymentmethod === "COD") {
-      const Payments = await PAYMENTS.create({
-        userId,
-        amount: orderData.totalamount,
-        orderId,
-        paymentmethod: paymentmethod,
-        shippingAdress: orderData.shippingAddress._id,
-        orderdpaymentid: razorpay_order_id || "testing order",
-        paymentstatus: paymentstatus || "panding",
-      });
-      res.status(200).json({
-        success: true,
-        message: "Payment verified successfully",
-        Payments,
-      });
+      paymentData.paymentid = "COD_" + Date.now();
+      paymentData.signature = "COD";
     } else if (paymentmethod === "upi" || paymentmethod === "card") {
-      const Payments = await PAYMENTS.create({
-        userId,
-        amount: orderData.totalamount,
-        orderId,
-        paymentid: razorpay_payment_id || "testing Payment",
-        orderdpaymentid: razorpay_order_id || "testing order",
-        signature: razorpay_signature || "testing signature",
-        shippingAdress: orderData.shippingAddress._id,
-        paymentmethod: paymentmethod,
-        paymentstatus: paymentstatus || "complete",
-        status: "completed",
-      });
-      res.status(200).json({
-        success: true,
-        message: "Payment verified successfully",
-        Payments,
-      });
+      paymentData.paymentid = razorpay_payment_id;
+      paymentData.signature = razorpay_signature;
+      paymentData.status = "completed";
     } else {
-      res.status(404).json({ message: "payment option not found!" });
+      return res.status(400).json({ message: "Invalid payment method" });
     }
 
+    const Payments = await PAYMENTS.create(paymentData);
+
     await order.findByIdAndUpdate(orderId, {
-      paymentstatus: "complete",
+      paymentstatus: "paid",
       status: "confirmed",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Payment verified successfully",
+      Payments,
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      message: "Payment verification failed",
     });
   }
 });

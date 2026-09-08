@@ -5,88 +5,82 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authmiddleware = require("../Middlerware/authmiddleware");
+const { registerValidation, loginValidation } = require("../middleware/validation");
 
-router.post("/register", async (req, res) => {
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+router.post("/register", registerValidation, async (req, res) => {
   try {
     const { Email, Password } = req.body;
 
-    console.log(Email);
-    console.log(Password);
-    if (!Email || !Password) {
-      return res.json({ message: "Email or password required" });
-    }
-
-    const Emailfind = await registerschma.findOne({ Email: Email });
+    const Emailfind = await registerschma.findOne({ Email: Email.toLowerCase() });
     if (Emailfind) {
-      return res.json({ message: "User already exists" });
+      return res.status(409).json({ message: "User already exists" });
     }
 
-    const hashedpassword = await bcrypt.hash(Password, 10);
-    const newuser = await registerschma.create({
-      Email: Email,
-
+    const hashedpassword = await bcrypt.hash(Password, 12);
+    await registerschma.create({
+      Email: Email.toLowerCase(),
       Password: hashedpassword,
     });
 
-    res.status(200).json({ message: "successfuly" });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Registration failed" });
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginValidation, async (req, res) => {
   try {
     const { Email, Password } = req.body;
-    console.log(req.body);
-    const Emailfind = await registerschma.findOne({ Email: Email });
+
+    const Emailfind = await registerschma.findOne({ Email: Email.toLowerCase() });
 
     if (!Emailfind) {
-      return res.status(400).json({ message: "Email not register" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const passwordcheck = await bcrypt.compare(Password, Emailfind.Password);
     if (!passwordcheck) {
-      return res.status(400).json({ message: "enter correct password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
+
     const Role = Emailfind.Role;
-    console.log(Role);
 
     const Token = jwt.sign(
       {
         id: Emailfind._id,
-        Email: Email,
+        Email: Emailfind.Email,
         Role: Role,
       },
-      "secretkey",
+      JWT_SECRET,
       { expiresIn: "1h" },
     );
+
     res.cookie("token", Token, {
       httpOnly: true,
-      secure: true,
-
+      secure: NODE_ENV === "production",
+      sameSite: NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 60 * 60 * 1000,
-      sameSite: "None",
       path: "/",
     });
-    if (Role === "user") {
-      return res
-        .status(200)
-        .json({ message: "login successfly", token: Token, Role: Role });
-    }
+
+    const responseData = {
+      message: "Login successful",
+      Role: Role,
+    };
+
     if (Role === "admin") {
-      return res.status(200).json({
-        message: "login successfly",
-        token: Token,
-        Role: Role,
-        id: Emailfind._id,
-      });
+      responseData.id = Emailfind._id;
     }
 
-    res.status(200).json({ message: "successfully" });
+    return res.status(200).json(responseData);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Login failed" });
   }
 });
+
 //token verify
 router.get("/profile", authmiddleware, async (req, res) => {
   res.json({
@@ -96,11 +90,13 @@ router.get("/profile", authmiddleware, async (req, res) => {
     },
   });
 });
-router.get("/user", (req, res) => {
-  const token = req.cookies.token;
 
-  const findrole = registerschma.find();
-  console.log(findrole);
+router.get("/user", authmiddleware, async (req, res) => {
+  if (req.user.Role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Admin only." });
+  }
+  const users = await registerschma.find().select("-Password");
+  res.json({ users });
 });
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+
 const authmiddleware = (req, res, next) => {
   try {
     const token = req.cookies?.token;
@@ -8,9 +10,9 @@ const authmiddleware = (req, res, next) => {
       return res.status(401).json({ message: "Token not valid" });
     }
 
-    const decoded = jwt.verify(token, "secretkey");
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    req.user = decoded; // 🔥 yaha userId / Email store karo
+    req.user = decoded;
 
     next();
   } catch (error) {

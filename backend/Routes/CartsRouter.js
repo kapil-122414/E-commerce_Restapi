@@ -1,19 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const user = require("../models/Registermodels");
 const carts = require("../models/Cartsmodels");
 const product = require("../models/productmodels");
 const authmiddleware = require("../Middlerware/authmiddleware");
+
 router.post("/carts", authmiddleware, async (req, res) => {
   try {
     const userid = req.user.id;
-    console.log(req.body);
     const { ProductId, variants, Quantity } = req.body;
+
+    if (!ProductId || !Quantity || Quantity < 1) {
+      return res.status(400).json({ message: "ProductId and Quantity (>=1) are required" });
+    }
 
     const products = await product.findById(ProductId);
 
     if (!products) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (products.stock < Quantity) {
+      return res.status(400).json({ message: "Insufficient stock" });
     }
 
     const price = products.price;
@@ -29,10 +36,10 @@ router.post("/carts", authmiddleware, async (req, res) => {
     const totalItems = await carts.countDocuments({
       UserId: userid,
     });
-    console.log(totalItems);
-    res.status(200).json({ message: "successfully", newdata, totalItems });
+
+    res.status(201).json({ message: "Added to cart successfully", newdata, totalItems });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to add to cart" });
   }
 });
 
@@ -40,13 +47,9 @@ router.get("/carts", authmiddleware, async (req, res) => {
   try {
     const Userid = req.user.id;
     const page = parseInt(req.query.page) || 1;
-
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    if (!Userid) {
-      return res.json({ message: "data not valid" });
-    }
     const cartsitems = await carts
       .find({ UserId: Userid })
       .populate("ProductId", "Productname Img price")
@@ -66,16 +69,14 @@ router.get("/carts", authmiddleware, async (req, res) => {
         quantity: item.Quantity,
         price: item.price,
         totalPrice,
-
-        // 🔥 product details
         product: {
-          name: item.ProductId?.name,
-          image: item.ProductId?.image,
+          name: item.ProductId?.Productname,
+          image: item.ProductId?.Img?.url,
         },
       };
     });
 
-    const total = await carts.countDocuments(Userid);
+    const total = await carts.countDocuments({ UserId: Userid });
     res.json({
       message: "success",
       items: updatedCart,
@@ -85,25 +86,28 @@ router.get("/carts", authmiddleware, async (req, res) => {
       totaldata: total,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch cart" });
   }
 });
+
 //one cart delete
 router.delete("/carts/:id", authmiddleware, async (req, res) => {
   try {
     const cartId = req.params.id;
+    const userId = req.user.id;
 
-    const deletedata = await carts.findByIdAndDelete(cartId);
+    const deletedata = await carts.findOneAndDelete({ _id: cartId, UserId: userId });
 
     if (!deletedata) {
       return res.status(404).json({ message: "Cart item not found" });
     }
 
-    res.json({ message: "Cart item deleted", deletedata });
+    res.json({ message: "Cart item deleted" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to delete cart item" });
   }
 });
+
 //user data delete
 router.delete("/carts", authmiddleware, async (req, res) => {
   try {
@@ -113,13 +117,15 @@ router.delete("/carts", authmiddleware, async (req, res) => {
 
     res.json({ message: "All cart items deleted", result });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to clear cart" });
   }
 });
+
 //update data carts
 router.patch("/carts/:_id", authmiddleware, async (req, res) => {
   try {
     const id = req.params._id;
+    const userId = req.user.id;
     const data = req.body;
 
     if (!id) {
@@ -130,22 +136,29 @@ router.patch("/carts/:_id", authmiddleware, async (req, res) => {
       return res.status(400).json({ message: "data not valid" });
     }
 
-    const cartItem = await carts.findById(id);
-    const productprice = await product.findById(cartItem.ProductId);
+    const cartItem = await carts.findOne({ _id: id, UserId: userId });
 
     if (!cartItem) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    // ✅ quantity direct field hai
-    if (data.Quantity !== undefined) {
-      cartItem.Quantity = data.Quantity;
+    const productprice = await product.findById(cartItem.ProductId);
 
-      // 🔥 totalPrice update
+    if (!productprice) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (data.Quantity !== undefined) {
+      if (data.Quantity < 1) {
+        return res.status(400).json({ message: "Quantity must be at least 1" });
+      }
+      if (productprice.stock < data.Quantity) {
+        return res.status(400).json({ message: "Insufficient stock" });
+      }
+      cartItem.Quantity = data.Quantity;
       cartItem.totalprice = productprice.price * data.Quantity;
     }
 
-    // ✅ variants safely update karo
     if (data.variants) {
       cartItem.variants = {
         ...cartItem.variants,
@@ -156,11 +169,12 @@ router.patch("/carts/:_id", authmiddleware, async (req, res) => {
     await cartItem.save();
 
     res.status(200).json({
-      message: "update successfully",
+      message: "updated successfully",
       data: cartItem,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to update cart" });
   }
 });
+
 module.exports = router;

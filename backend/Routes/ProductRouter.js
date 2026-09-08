@@ -2,18 +2,16 @@ const express = require("express");
 const router = express.Router();
 const productschema = require("../models/productmodels");
 const authmiddleware = require("../Middlerware/authmiddleware");
-const fs = require("fs");
-const path = require("path");
 const uploads = require("../multer/imgmulter");
 const cloudinary = require("../config/cloudinary");
-const { resolve } = require("dns");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const { productValidation, mongoIdParam, paginationValidation } = require("../middleware/validation");
 
 //post api
 router.post(
   "/product",
   authmiddleware,
   uploads.single("Img"),
+  productValidation,
   async (req, res) => {
     try {
       const {
@@ -31,7 +29,6 @@ router.post(
       } = req.body;
 
       const variants = JSON.parse(req.body.variant || "[]");
-      // Update API
       const totalStock = variants.reduce((sum, item) => {
         return sum + Number(item.stock || 0);
       }, 0);
@@ -70,13 +67,13 @@ router.post(
         data: newProduct,
       });
     } catch (error) {
-      console.error(error);
       res.status(500).json({
-        message: error.message,
+        message: "Failed to create product",
       });
     }
   },
 );
+
 //get product count by category
 router.get("/product/count-by-category", authmiddleware, async (req, res) => {
   try {
@@ -85,15 +82,15 @@ router.get("/product/count-by-category", authmiddleware, async (req, res) => {
     ]);
     res.status(200).json({ success: true, data: counts });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Failed to fetch counts" });
   }
 });
 
 //get api
-router.get("/product", authmiddleware, async (req, res) => {
+router.get("/product", authmiddleware, paginationValidation, async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 4;
+    let limit = parseInt(req.query.limit) || 10;
     let skip = (page - 1) * limit;
     let status = req.query.status || "";
     let search = req.query.search || "";
@@ -134,32 +131,34 @@ router.get("/product", authmiddleware, async (req, res) => {
       data,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch products" });
   }
 });
+
 //delete
-router.delete("/product/:_id", authmiddleware, async (req, res) => {
+router.delete("/product/:_id", authmiddleware, mongoIdParam, async (req, res) => {
   try {
     const data = await productschema.findById(req.params._id);
 
     if (!data) {
-      return res.status(404).json({ message: "not found data" });
+      return res.status(404).json({ message: "Product not found" });
     }
     if (data.Img?.public_id) {
-      console.log("after", data.Img);
-      const imgdelete = await cloudinary.uploader.destroy(data.Img.public_id);
+      await cloudinary.uploader.destroy(data.Img.public_id);
     }
     await productschema.findByIdAndDelete(req.params._id);
 
-    res.status(200).json({ message: "successfully" });
+    res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message, stack: error.stack });
+    res.status(500).json({ message: "Failed to delete product" });
   }
 });
+
 //patch
 router.patch(
   "/product/:_id",
   authmiddleware,
+  mongoIdParam,
   uploads.single("Img"),
   async (req, res) => {
     try {
@@ -167,10 +166,9 @@ router.patch(
       const olddata = await productschema.findById(id);
 
       if (!olddata) {
-        return res.status(404).json({ message: "not found" });
+        return res.status(404).json({ message: "Product not found" });
       }
 
-      console.log(olddata.Img?.public_id);
       const updatedata = { ...req.body };
       if (updatedata.variant) {
         updatedata.variant = JSON.parse(updatedata.variant);
@@ -189,16 +187,15 @@ router.patch(
       const newdata = await productschema.findByIdAndUpdate(id, updatedata, {
         new: true,
       });
-      console.log(newdata);
-      res.status(200).json({ message: "successfully", newdata });
+      res.status(200).json({ message: "Product updated successfully", newdata });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Failed to update product" });
     }
   },
 );
+
 //get api
-// get api
-router.get("/product/:id", authmiddleware, async (req, res) => {
+router.get("/product/:id", authmiddleware, mongoIdParam, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -220,7 +217,7 @@ router.get("/product/:id", authmiddleware, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to fetch product",
     });
   }
 });
