@@ -87,6 +87,8 @@ router.get("/profile", authmiddleware, async (req, res) => {
     message: "Profile fetched successfully",
     user: {
       Email: req.user.Email,
+      Role: req.user.Role,
+      id: req.user.id,
     },
   });
 });
