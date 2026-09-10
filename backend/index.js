@@ -24,6 +24,9 @@ const settingrouter = require("./Routes/SettingRouter");
 
 const app = express();
 
+// Trust proxy (required for Render/Heroku/any reverse proxy)
+app.set('trust proxy', 1);
+
 // ================= SECURITY MIDDLEWARE =================
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
