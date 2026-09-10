@@ -143,7 +143,8 @@ router.patch("/order/:id", authmiddleware, async (req, res) => {
 router.get("/order/:id", authmiddleware, async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await orders.findOne({ _id: id, userid: req.user.id })
+    const data = await orders
+      .findOne({ _id: id, userid: req.user.id })
       .populate("shippingAddress")
       .populate("items.product");
 
@@ -164,12 +165,6 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
 
 router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
-    if (req.user.Role !== "admin") {
-      return res.status(403).json({
-        message: "Access denied. Admin only.",
-      });
-    }
-
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -185,9 +180,11 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     }
 
     if (search) {
-      const users = await user.find({
-        Email: { $regex: search, $options: "i" },
-      }).select("_id");
+      const users = await user
+        .find({
+          Email: { $regex: search, $options: "i" },
+        })
+        .select("_id");
 
       const userIds = users.map((item) => item._id);
 
@@ -229,7 +226,7 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     const total = await orders.countDocuments(filter);
 
     const sortObj = {};
-    if (sort.startsWith('-')) {
+    if (sort.startsWith("-")) {
       sortObj[sort.substring(1)] = -1;
     } else {
       sortObj[sort] = 1;
@@ -263,7 +260,8 @@ router.get("/admin/order/:id", authmiddleware, async (req, res) => {
     }
 
     const id = req.params.id;
-    const data = await orders.findById(id)
+    const data = await orders
+      .findById(id)
       .populate("userid", "Email")
       .populate("items.product");
 
@@ -288,16 +286,23 @@ router.patch("/admin/order/:id", authmiddleware, async (req, res) => {
 
     if (updateData.shippingAddress) {
       if (updateData.shippingAddress.Phoneno) {
-        updateData.shippingAddress.Phoneno = Number(updateData.shippingAddress.Phoneno);
+        updateData.shippingAddress.Phoneno = Number(
+          updateData.shippingAddress.Phoneno,
+        );
       }
       if (updateData.shippingAddress.pinecode) {
-        updateData.shippingAddress.pinecode = Number(updateData.shippingAddress.pinecode);
+        updateData.shippingAddress.pinecode = Number(
+          updateData.shippingAddress.pinecode,
+        );
       }
     }
-    if (updateData.shippingCost !== undefined) updateData.shippingCost = Number(updateData.shippingCost);
-    if (updateData.discount !== undefined) updateData.discount = Number(updateData.discount);
+    if (updateData.shippingCost !== undefined)
+      updateData.shippingCost = Number(updateData.shippingCost);
+    if (updateData.discount !== undefined)
+      updateData.discount = Number(updateData.discount);
 
-    const updatedOrder = await orders.findByIdAndUpdate(id, updateData, { new: true })
+    const updatedOrder = await orders
+      .findByIdAndUpdate(id, updateData, { new: true })
       .populate("userid", "Email")
       .populate("items.product");
 
