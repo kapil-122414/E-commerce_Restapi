@@ -58,7 +58,7 @@ router.post("/login", loginValidation, async (req, res) => {
       { expiresIn: "1h" },
     );
 
-    res.cookie("token", Token, {
+    res.cookie("Token", Token, {
       httpOnly: true,
       secure: NODE_ENV === "production",
       sameSite: NODE_ENV === "production" ? "None" : "Lax",
@@ -69,11 +69,8 @@ router.post("/login", loginValidation, async (req, res) => {
     const responseData = {
       message: "Login successful",
       Role: Role,
+      id: Emailfind._id,
     };
-
-    if (Role === "admin") {
-      responseData.id = Emailfind._id;
-    }
 
     return res.status(200).json(responseData);
   } catch (error) {
@@ -102,7 +99,7 @@ router.get("/user", authmiddleware, async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
+  res.clearCookie("Token", {
     httpOnly: true,
     secure: NODE_ENV === "production",
     sameSite: NODE_ENV === "production" ? "None" : "Lax",

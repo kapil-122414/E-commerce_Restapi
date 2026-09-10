@@ -19,7 +19,7 @@ const productschema = new Schema(
     slug: {
       type: String,
     },
-    shortdiscription: {
+    shortDescription: {
       type: String,
     },
     mrp: {

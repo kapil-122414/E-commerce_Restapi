@@ -17,7 +17,7 @@ router.post(
       const {
         Productname,
         Description,
-        shortdiscription,
+        shortDescription,
         slug,
         categoryId,
         brand,
@@ -36,7 +36,7 @@ router.post(
       const newProduct = await productschema.create({
         Productname,
         Description,
-        shortdiscription,
+        shortDescription,
         slug,
         categoryId,
         brand,
@@ -177,6 +177,10 @@ router.patch(
         updatedata.stock = updatedata.variant.reduce((sum, item) => {
           return sum + Number(item.stock || 0);
         }, 0);
+      }
+      if (updatedata.shortdiscription !== undefined) {
+        updatedata.shortDescription = updatedata.shortdiscription;
+        delete updatedata.shortdiscription;
       }
       if (req.file) {
         if (olddata.Img?.public_id) {

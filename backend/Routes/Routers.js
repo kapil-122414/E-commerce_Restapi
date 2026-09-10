@@ -160,7 +160,7 @@ router.patch(
 );
 // get api
 router.get("/category/all", authmiddleware, async (req, res) => {
-  const data = await modelschema.find().select("_id Categoryname brands");
+  const data = await modelschema.find().select("_id Categoryname");
   res.json(data);
 });
 
