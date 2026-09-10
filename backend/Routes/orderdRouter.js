@@ -163,6 +163,82 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
 
 /// show the data in admin
 
+router.get("/all-orders", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+    const status = req.query.status || "";
+    const sort = req.query.sort || "-createdAt";
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (search) {
+      filter.$or = [
+        {
+          "shippingAddress.name": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate && startDate.trim() !== "") {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          filter.createdAt.$gte = start;
+        }
+      }
+      if (endDate && endDate.trim() !== "") {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          filter.createdAt.$lte = end;
+        }
+      }
+      if (Object.keys(filter.createdAt).length === 0) {
+        delete filter.createdAt;
+      }
+    }
+
+    const total = await orders.countDocuments(filter);
+
+    const sortObj = {};
+    if (sort.startsWith("-")) {
+      sortObj[sort.substring(1)] = -1;
+    } else {
+      sortObj[sort] = 1;
+    }
+
+    const allorder = await orders
+      .find(filter)
+      .populate("userid", "Email Role")
+      .populate("items.product")
+      .sort(sortObj)
+      .limit(limit)
+      .skip(skip);
+
+    return res.status(200).json({
+      allorder,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch orders",
+    });
+  }
+});
+
 router.get("/admin/order", authmiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
