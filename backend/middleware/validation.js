@@ -59,7 +59,7 @@ const categoryValidation = [
     .matches(/^[a-z0-9-]+$/)
     .withMessage("Slug can only contain lowercase letters, numbers, and hyphens"),
   body("Status")
-    .isIn(["active", "inactive"])
+    .isIn(["active", "inactive", "Active", "Inactive"])
     .withMessage("Status must be active or inactive"),
   handleValidationErrors,
 ];
@@ -108,7 +108,7 @@ const brandValidation = [
     .withMessage("Brand name too long"),
   body("status")
     .optional()
-    .isIn(["active", "inactive"])
+    .isIn(["active", "inactive", "Active", "Inactive"])
     .withMessage("Status must be active or inactive"),
   handleValidationErrors,
 ];

@@ -4,7 +4,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-in-producti
 
 const authmiddleware = (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    const token = req.cookies?.Token || req.cookies?.token;
 
     if (!token) {
       return res.status(401).json({ message: "Token not valid" });
