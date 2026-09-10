@@ -16,7 +16,7 @@ router.post(
   (req, res, next) => {
     uploads.single("Img")(req, res, (err) => {
       if (err) {
-        console.error("❌ Multer/Cloudinary Error:", err.message);
+        console.error(" Multer/Cloudinary Error:", err.message);
         return res.status(500).json({
           success: false,
           message: "Image upload failed: " + err.message,
@@ -34,15 +34,18 @@ router.post(
         });
       }
 
-      // ✅ Create and save to MongoDB
+      // Create and save to MongoDB
       const category = new modelschema({
         Categoryname: req.body.Categoryname,
         Slug: req.body.Slug,
         Status: req.body.Status,
-        Img: req.file.path, // Cloudinary URL
+        Img: {
+          url: req.file.path,
+          public_id: req.file.filename,
+        },
       });
 
-      await category.save(); // ✅ This was missing!
+      await category.save();
 
       res.status(201).json({
         success: true,
@@ -108,10 +111,9 @@ router.delete("/category/:_id", authmiddleware, async (req, res) => {
       return res.status(404).json({ message: "not find data" });
     }
 
-    // 🔥 Cloudinary delete
-    if (data.Img) {
-      const publicId = data.Img.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(`categories/${publicId}`);
+    // Cloudinary delete
+    if (data.Img?.public_id) {
+      await cloudinary.uploader.destroy(`categories/${data.Img.public_id}`);
     }
 
     await modelschema.findByIdAndDelete(req.params._id);
@@ -134,19 +136,21 @@ router.patch(
       const olddata = await modelschema.findById(id);
 
       if (!olddata) {
-        return res.status(404).json({ meaage: "data not found" });
+        return res.status(404).json({ message: "data not found" });
       }
 
       const updateddata = { ...req.body };
 
       if (req.file) {
         // old image delete from cloudinary
-        if (olddata.Img) {
-          const publicId = olddata.Img.split("/").pop().split(".")[0];
-          await cloudinary.uploader.destroy(`categories/${publicId}`);
+        if (olddata.Img?.public_id) {
+          await cloudinary.uploader.destroy(`categories/${olddata.Img.public_id}`);
         }
 
-        updateddata.Img = req.file.path; // new URL
+        updateddata.Img = {
+          url: req.file.path,
+          public_id: req.file.filename,
+        };
       }
       const newdata = await modelschema.findByIdAndUpdate(id, updateddata, {
         new: true,
@@ -178,25 +182,23 @@ router.get("/category/:_id", authmiddleware, async (req, res) => {
   }
 });
 
-//desciption api
+//description api - using Google Generative AI
 router.post("/ai-description", authmiddleware, async (req, res) => {
   try {
     const { Categoryname, productname } = req.body;
-    const Response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama3",
-        prompt: `Write a short ecommerce category description for "${Categoryname}" in 2 lines.`,
-        stream: false,
-      }),
-    });
-    const data = await Response.json();
-    res.json({ description: data.response });
+    const { GoogleGenerativeAI } = require("@google/generative-ai");
+    
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `Write a short ecommerce category description for "${Categoryname}" in 2 lines.`;
+    const result = await model.generateContent(prompt);
+    const description = result.response.text();
+    
+    res.json({ description });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("AI Description Error:", error);
+    res.status(500).json({ message: "Failed to generate description" });
   }
 });
 
