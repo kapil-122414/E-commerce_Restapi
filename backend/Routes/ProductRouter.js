@@ -226,4 +226,47 @@ router.get("/product/:id", authmiddleware, mongoIdParam, async (req, res) => {
   }
 });
 
+// admin get all products
+router.get("/admin/product", authmiddleware, async (req, res) => {
+  try {
+    if (req.user.Role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. Admin only.",
+      });
+    }
+
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    let skip = (page - 1) * limit;
+    let status = req.query.status || "";
+    let search = req.query.search || "";
+
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    }
+    if (search) {
+      filter.Productname = { $regex: search, $options: "i" };
+    }
+
+    const data = await productschema
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("categoryId")
+      .populate("brand");
+    const total = await productschema.countDocuments(filter);
+    res.status(200).json({
+      message: "successfully",
+      page,
+      total,
+      totalPages: Math.ceil(total / limit),
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch products" });
+  }
+});
+
 module.exports = router;

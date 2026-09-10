@@ -1,2 +1,18 @@
+# Dependencies
+node_modules/
+
+# Environment files
 .env
-frontend/
+.env.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Build
+dist/
+
+# IDE
+.vscode/
+.idea/

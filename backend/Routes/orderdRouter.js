@@ -208,11 +208,21 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
 
     if (startDate || endDate) {
       filter.createdAt = {};
-      if (startDate) {
-        filter.createdAt.$gte = new Date(startDate);
+      if (startDate && startDate.trim() !== "") {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          filter.createdAt.$gte = start;
+        }
       }
-      if (endDate) {
-        filter.createdAt.$lte = new Date(endDate);
+      if (endDate && endDate.trim() !== "") {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          filter.createdAt.$lte = end;
+        }
+      }
+      // Remove createdAt filter if no valid dates
+      if (Object.keys(filter.createdAt).length === 0) {
+        delete filter.createdAt;
       }
     }
 
