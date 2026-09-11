@@ -146,7 +146,7 @@ router.get("/order/:id", authmiddleware, async (req, res) => {
     const data = await orders
       .findOne({ _id: id, userid: req.user.id })
       .populate("shippingAddress")
-      .populate("items.product");
+      .populate("items.productid");
 
     if (!data) {
       return res.status(404).json({ message: "Order not found" });
@@ -221,7 +221,7 @@ router.get("/all-orders", async (req, res) => {
     const allorder = await orders
       .find(filter)
       .populate("userid", "Email Role")
-      .populate("items.product")
+      .populate("items.productid")
       .sort(sortObj)
       .limit(limit)
       .skip(skip);
@@ -311,7 +311,7 @@ router.get("/admin/order", authmiddleware, async (req, res) => {
     const allorder = await orders
       .find(filter)
       .populate("userid", "Email Role")
-      .populate("items.product")
+      .populate("items.productid")
       .sort(sortObj)
       .limit(limit)
       .skip(skip);
@@ -339,7 +339,7 @@ router.get("/admin/order/:id", authmiddleware, async (req, res) => {
     const data = await orders
       .findById(id)
       .populate("userid", "Email")
-      .populate("items.product");
+      .populate("items.productid");
 
     if (!data) {
       return res.status(404).json({ message: "Order not found" });
@@ -380,7 +380,7 @@ router.patch("/admin/order/:id", authmiddleware, async (req, res) => {
     const updatedOrder = await orders
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate("userid", "Email")
-      .populate("items.product");
+      .populate("items.productid");
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
